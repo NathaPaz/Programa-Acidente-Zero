@@ -1696,11 +1696,12 @@ function _initApp(){
 
 </script>
 
-<script type="module">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
 // ════════════════════════════════════════════════════════
 // SUPABASE AUTH + PROTEÇÃO DE ROTA
 // ════════════════════════════════════════════════════════
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const { createClient } = supabase;
 
 // ⚠️ Substitua pelos valores reais do seu projeto Supabase
 const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
@@ -1710,39 +1711,55 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: { persistSession: true, autoRefreshToken: true }
 });
 
-// Proteção de rota — redireciona se não autenticado
-const { data: { session } } = await sb.auth.getSession();
-if (!session) {
-  window.location.replace('/login.html');
-  throw new Error('Não autenticado');
-}
+// Variáveis de sessão — preenchidas pela IIFE de inicialização
+let session, perfil;
 
-const { data: perfil } = await sb
-  .from('profiles')
-  .select('id, nome, role, status')
-  .eq('id', session.user.id)
-  .single();
+// Proteção de rota — aguarda auth antes de qualquer coisa
+(async function initAuth() {
+  const { data } = await sb.auth.getSession();
+  session = data.session;
 
-if (!perfil || perfil.status !== 'ativo') {
-  await sb.auth.signOut();
-  window.location.replace('/login.html');
-  throw new Error('Conta inativa ou bloqueada');
-}
+  if (!session) {
+    window.location.replace('/login.html');
+    return;
+  }
 
-// Expor sb e analista globalmente para o script principal
-window.sb          = sb;
-window.analAtual   = perfil.nome;
-window.analAtualId = session.user.id;
+  const { data: p } = await sb
+    .from('profiles')
+    .select('id, nome, role, status')
+    .eq('id', session.user.id)
+    .single();
 
-// Atualizar header
-document.getElementById('user-nome-hdr').textContent  = perfil.nome;
-document.getElementById('user-role-badge').textContent =
-  perfil.role === 'admin' ? '★ ADM' : perfil.role === 'supervisor' ? '◆ SUP' : '';
+  perfil = p;
 
-// Mostrar botão Admin para admin/supervisor
-if (['admin','supervisor'].includes(perfil.role)) {
-  document.getElementById('nav-auditoria').style.display = 'flex';
-}
+  if (!perfil || perfil.status !== 'ativo') {
+    await sb.auth.signOut();
+    window.location.replace('/login.html');
+    return;
+  }
+
+  // Expor sb e analista globalmente para o script principal
+  window.sb          = sb;
+  window.session     = session;
+  window.perfil      = perfil;
+  window.analAtual   = perfil.nome;
+  window.analAtualId = session.user.id;
+
+  // Atualizar header
+  document.getElementById('user-nome-hdr').textContent  = perfil.nome;
+  document.getElementById('user-role-badge').textContent =
+    perfil.role === 'admin' ? '★ ADM' : perfil.role === 'supervisor' ? '◆ SUP' : '';
+
+  // Mostrar botão Admin para admin/supervisor
+  if (['admin','supervisor'].includes(perfil.role)) {
+    document.getElementById('nav-auditoria').style.display = 'flex';
+  }
+
+  // Inicializar app após auth confirmada
+  await carregarState();
+  try { await sb.rpc('update_last_login', { uid: session.user.id }); } catch(_){}
+  _initApp();
+})();
 
 // ════════════════════════════════════════════════════════
 // BANCO DE DADOS (substitui armazenamento local — agora via Supabase)
@@ -2105,12 +2122,6 @@ sb.channel('paz5-sync')
   })
   .subscribe();
 
-// ════════════════════════════════════════════════════════
-// INICIALIZAR
-// ════════════════════════════════════════════════════════
-await carregarState();
-try { await sb.rpc('update_last_login', { uid: session.user.id }); } catch(_){}
-_initApp();
 
 </script>
 </body>

@@ -406,8 +406,9 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const { createClient } = supabase;
 
 // ⚠️ Substitua pelos valores reais
 const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
@@ -424,23 +425,30 @@ let analistaAtivoId = null;
 let charts = {};
 
 // ─── Proteção da página ───────────────────────────────────────
-const { data: { session } } = await sb.auth.getSession();
-if (!session) { window.location.replace('/login.html'); throw 0; }
-currentUser = session.user;
+(async function initAdmin() {
+  const { data } = await sb.auth.getSession();
+  const session = data.session;
+  if (!session) { window.location.replace('/login.html'); return; }
+  currentUser = session.user;
 
-const { data: perfil } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-if (!perfil || !['admin','supervisor'].includes(perfil.role)) {
-  await sb.auth.signOut();
-  window.location.replace('/login.html?erro=sem_permissao');
-  throw 0;
-}
-currentProfile = perfil;
+  const { data: perfil } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (!perfil || !['admin','supervisor'].includes(perfil.role)) {
+    await sb.auth.signOut();
+    window.location.replace('/login.html?erro=sem_permissao');
+    return;
+  }
+  currentProfile = perfil;
 
-// Header
-const ini = n => { const p=(n||'').trim().split(/\s+/).filter(Boolean); return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():(n||'??').substring(0,2).toUpperCase(); };
-document.getElementById('hdr-av').textContent    = ini(perfil.nome);
-document.getElementById('hdr-nome').textContent  = perfil.nome;
-document.getElementById('hdr-role').textContent  = perfil.role;
+  // Header
+  const ini = n => { const p=(n||'').trim().split(/\s+/).filter(Boolean); return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():(n||'??').substring(0,2).toUpperCase(); };
+  document.getElementById('hdr-av').textContent    = ini(perfil.nome);
+  document.getElementById('hdr-nome').textContent  = perfil.nome;
+  document.getElementById('hdr-role').textContent  = perfil.role;
+
+  // ─── Iniciar ───────────────────────────────────────────────────
+  carregarDashboard();
+  await carregarUsuarios(); // pré-carrega lista de usuários para o select de logs
+})();
 
 // ─── Navegação ────────────────────────────────────────────────
 window.showPage = function(p) {
