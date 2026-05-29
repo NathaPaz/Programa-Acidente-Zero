@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAZ 5.0 — Painel Administrativo</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ap:#0A3D6B;--am:#0D5499;--av:#0077C8;--ci:#00B4CC;--vl:#A8CC00;--vl2:#C8E000;
+  --bg:#F0F4F8;--brd:rgba(0,119,200,0.13);--tx:#0A2540;--txs:#4A6785;
+  --na-bg:#E8F7F0;--na-b:#1D9E75;--na-t:#0A5C3F;
+  --nb-bg:#FFF8E6;--nb-b:#D4960A;--nb-t:#7A5200;
+  --nc-bg:#FDEAEA;--nc-b:#C0392B;--nc-t:#7A1A14;
+  --ny-bg:#FFFBEA;--ny-b:#F59E0B;--ny-t:#92400E;
+  --sc:0 2px 14px rgba(0,77,153,0.09);--r:9px;--rl:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;}
+
+/* HEADER */
+.hdr{background:linear-gradient(100deg,#030f1f 0%,var(--ap) 60%,#0D5499 100%);height:60px;display:flex;align-items:center;padding:0 20px;gap:10px;position:sticky;top:0;z-index:300;box-shadow:0 2px 18px rgba(0,0,0,.35);}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--nc-b),var(--ny-b),var(--vl));}
+.brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.b-ico{width:34px;height:34px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.22);border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.b-nm{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:900;color:#fff;line-height:1;}
+.b-nm em{color:var(--vl2);font-style:normal;}
+.b-adm{font-size:9px;font-weight:800;background:rgba(245,158,11,.3);border:1px solid rgba(245,158,11,.5);border-radius:12px;padding:1px 8px;color:#FDE68A;letter-spacing:.5px;}
+.hsep{width:1px;height:26px;background:rgba(255,255,255,.13);flex-shrink:0;}
+.user-info{display:flex;align-items:center;gap:7px;}
+.user-av{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--nc-b),#7A1A14);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:900;font-family:'Barlow Condensed',sans-serif;flex-shrink:0;}
+.user-nm{font-size:11px;font-weight:700;color:#fff;}
+.user-role{font-size:9px;color:rgba(255,255,255,.5);font-weight:600;}
+.nav{display:flex;gap:1px;margin-left:auto;}
+.nb{background:transparent;border:none;color:rgba(255,255,255,.6);padding:6px 10px;border-radius:7px;cursor:pointer;font-family:'Barlow',sans-serif;font-size:12px;font-weight:600;transition:all .17s;display:flex;align-items:center;gap:4px;white-space:nowrap;}
+.nb:hover{background:rgba(255,255,255,.08);color:#fff;}
+.nb.active{background:rgba(245,158,11,.2);color:#FDE68A;}
+.nd{width:5px;height:5px;border-radius:50%;background:var(--ny-b);display:none;}
+.nb.active .nd{display:block;}
+.btn-logout{background:rgba(192,57,43,.2);border:1px solid rgba(192,57,43,.4);color:#FCA5A5;border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;flex-shrink:0;transition:all .15s;}
+.btn-logout:hover{background:rgba(192,57,43,.4);}
+
+/* LAYOUT */
+.page{display:none;padding:22px;max-width:1440px;margin:0 auto;}
+.page.active{display:block;}
+.pt{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--ap);letter-spacing:.3px;line-height:1.1;margin-bottom:2px;}
+.pt em{color:var(--av);font-style:normal;}
+.ps{font-size:12px;color:var(--txs);font-weight:500;margin-bottom:18px;}
+.card{background:#fff;border-radius:var(--rl);border:1px solid var(--brd);padding:18px;box-shadow:var(--sc);}
+
+/* MÉTRICAS */
+.mets{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px;}
+.met{background:#fff;border-radius:var(--r);border:1px solid var(--brd);padding:16px 12px 12px;text-align:center;box-shadow:var(--sc);position:relative;overflow:hidden;}
+.met::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.mt::before{background:var(--av);}
+.ma::before{background:var(--na-b);}
+.mb::before{background:var(--nb-b);}
+.mc::before{background:var(--nc-b);}
+.mu::before{background:var(--ny-b);}
+.mp::before{background:#ccc;}
+.mv{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;line-height:1;margin-bottom:3px;}
+.mt .mv{color:var(--av);}.ma .mv{color:var(--na-b);}.mb .mv{color:var(--nb-b);}.mc .mv{color:var(--nc-b);}.mu .mv{color:var(--ny-b);}.mp .mv{color:#aaa;}
+.ml{font-size:9px;font-weight:700;color:var(--txs);text-transform:uppercase;letter-spacing:.8px;}
+
+/* TABELAS */
+.tbl-wrap{background:#fff;border-radius:var(--rl);border:1px solid var(--brd);box-shadow:var(--sc);overflow:hidden;}
+.dtbl{width:100%;border-collapse:collapse;font-size:12px;}
+.dtbl thead tr:first-child{background:linear-gradient(90deg,var(--ap),var(--am));}
+.dtbl th{padding:9px 11px;text-align:left;font-size:9px;font-weight:800;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;}
+.dtbl td{padding:9px 11px;border-bottom:1px solid #EEF2F8;vertical-align:middle;}
+.dtbl tr:last-child td{border-bottom:none;}
+.dtbl tbody tr:hover td{background:#F0F6FF;}
+.dtbl tbody tr:nth-child(even) td{background:#FAFBFD;}
+.dtbl tbody tr:nth-child(even):hover td{background:#F0F6FF;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:800;border:1.5px solid;}
+.badge-admin{background:#FEF3C7;border-color:var(--ny-b);color:var(--ny-t);}
+.badge-supervisor{background:#EDE9FE;border-color:#7C3AED;color:#4C1D95;}
+.badge-analista{background:rgba(0,119,200,.08);border-color:rgba(0,119,200,.3);color:var(--av);}
+.badge-ativo{background:var(--na-bg);border-color:var(--na-b);color:var(--na-t);}
+.badge-inativo{background:#f3f4f6;border-color:#ddd;color:#999;}
+.badge-bloqueado{background:var(--nc-bg);border-color:var(--nc-b);color:var(--nc-t);}
+.badge-A{background:var(--na-bg);border-color:var(--na-b);color:var(--na-t);}
+.badge-B{background:var(--nb-bg);border-color:var(--nb-b);color:var(--nb-t);}
+.badge-C{background:var(--nc-bg);border-color:var(--nc-b);color:var(--nc-t);}
+
+/* RANK */
+.rank-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--r);background:var(--bg);margin-bottom:6px;}
+.rank-pos{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--txs);width:26px;text-align:center;}
+.rank-pos.gold{color:#F59E0B;}.rank-pos.silver{color:#9CA3AF;}.rank-pos.bronze{color:#B45309;}
+.rank-bar-w{flex:1;height:5px;background:#EEF2F8;border-radius:3px;overflow:hidden;}
+.rank-bar{height:100%;border-radius:3px;background:var(--av);}
+
+/* FORMS */
+.flbl{font-size:9px;font-weight:800;color:var(--av);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;display:block;}
+.fi{padding:9px 12px;border-radius:7px;border:1.5px solid #DDE5EF;background:var(--bg);font-family:'Barlow',sans-serif;font-size:12px;outline:none;width:100%;color:var(--tx);transition:all .17s;margin-bottom:12px;}
+.fi:focus{border-color:var(--av);background:#fff;}
+.fsel{padding:8px 10px;border-radius:7px;border:1.5px solid var(--brd);background:#fff;font-family:'Barlow',sans-serif;font-size:11px;font-weight:600;cursor:pointer;outline:none;color:var(--tx);}
+
+/* BOTÕES */
+.btnp{background:linear-gradient(135deg,var(--av),var(--am));color:#fff;border:none;padding:10px 18px;border-radius:8px;font-family:'Barlow',sans-serif;font-size:12px;font-weight:800;cursor:pointer;transition:all .18s;box-shadow:0 3px 12px rgba(0,119,200,.25);display:inline-flex;align-items:center;gap:5px;}
+.btnp:hover{transform:translateY(-1px);}
+.btno{background:transparent;color:var(--av);border:1.5px solid var(--av);padding:8px 14px;border-radius:7px;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .17s;}
+.btno:hover{background:rgba(0,119,200,.06);}
+.btn-blk{background:transparent;border:1.5px solid var(--nc-b);color:var(--nc-b);padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-blk:hover{background:var(--nc-bg);}
+.btn-ok{background:transparent;border:1.5px solid var(--na-b);color:var(--na-t);padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-ok:hover{background:var(--na-bg);}
+.btn-eye{background:rgba(0,119,200,.08);border:1.5px solid rgba(0,119,200,.2);color:var(--av);padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-eye:hover{background:rgba(0,119,200,.15);}
+.btn-rst{background:rgba(245,158,11,.1);border:1.5px solid rgba(245,158,11,.4);color:var(--ny-t);padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;}
+.btn-rst:hover{background:rgba(245,158,11,.2);}
+.act-btns{display:flex;gap:4px;flex-wrap:wrap;}
+
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(10,61,107,.54);backdrop-filter:blur(4px);z-index:400;align-items:center;justify-content:center;padding:14px;}
+.ov.open{display:flex;}
+.modal{background:#fff;border-radius:18px;padding:26px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;position:relative;box-shadow:0 24px 80px rgba(0,0,0,.25);}
+.modal-acc{position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--av),var(--ci),var(--vl));border-radius:18px 18px 0 0;}
+.mhdr{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--ap);margin-bottom:18px;margin-top:4px;}
+.mcls{position:absolute;top:16px;right:16px;background:var(--bg);border:none;width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:14px;color:var(--txs);display:flex;align-items:center;justify-content:center;}
+.mcls:hover{background:#E0E8F0;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg.full{grid-column:1/-1;}
+.fi-mg{margin-bottom:0;}
+
+/* FILTROS */
+.filtros-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+.sinput{flex:1;min-width:160px;padding:8px 12px;border-radius:7px;border:1.5px solid var(--brd);background:#fff;font-family:'Barlow',sans-serif;font-size:12px;outline:none;transition:border-color .17s;color:var(--tx);}
+.sinput:focus{border-color:var(--av);}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:linear-gradient(135deg,var(--ap),var(--am));color:#fff;padding:11px 18px;border-radius:9px;font-size:12px;font-weight:700;z-index:999;opacity:0;transform:translateY(8px);transition:all .22s;pointer-events:none;border-left:4px solid var(--ci);box-shadow:0 5px 22px rgba(0,0,0,.22);max-width:300px;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+/* LOADER */
+.loader{display:flex;align-items:center;justify-content:center;padding:48px;color:var(--txs);font-size:12px;font-weight:700;gap:10px;}
+.spin{width:18px;height:18px;border:2.5px solid var(--brd);border-top-color:var(--av);border-radius:50%;animation:gira .7s linear infinite;}
+@keyframes gira{to{transform:rotate(360deg);}}
+
+/* LOG BADGE */
+.log-acao{display:inline-flex;align-items:center;padding:1px 8px;border-radius:12px;font-size:9px;font-weight:800;border:1px solid;}
+.la-LOGIN{background:#ECFDF5;border-color:#6EE7B7;color:#065F46;}
+.la-LOGOUT{background:#F3F4F6;border-color:#D1D5DB;color:#6B7280;}
+.la-CHANGE_PASSWORD{background:#FEF3C7;border-color:#FCD34D;color:#92400E;}
+.la-CREATE_USER{background:#EDE9FE;border-color:#C4B5FD;color:#4C1D95;}
+.la-UPDATE_USER,.la-BLOCK_USER,.la-UNBLOCK_USER{background:#FFF7ED;border-color:#FED7AA;color:#9A3412;}
+.la-DELETE_MOTORISTA,.la-CLEAR_ALL{background:#FEF2F2;border-color:#FECACA;color:#991B1B;}
+.la-default{background:#F3F4F6;border-color:#D1D5DB;color:#374151;}
+
+/* ANALISTA CARD */
+.anal-card{background:#fff;border-radius:var(--rl);border:1px solid var(--brd);padding:16px;box-shadow:var(--sc);cursor:pointer;transition:all .17s;position:relative;overflow:hidden;}
+.anal-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--av);}
+.anal-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,77,153,.15);border-color:rgba(0,119,200,.3);}
+.anal-av{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--av),var(--ap));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:13px;font-family:'Barlow Condensed',sans-serif;margin-bottom:8px;}
+.anal-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:18px;}
+
+@media(max-width:700px){.fg2{grid-template-columns:1fr;}.mets{grid-template-columns:repeat(2,1fr);}.page{padding:12px;}.hdr{padding:0 8px;gap:6px;}.nb span{display:none;}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="brand">
+    <div class="b-ico">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9.5" stroke="white" stroke-width="1.7"/>
+        <path d="M12 2.5v19M2.5 12h19" stroke="white" stroke-width="1.3" opacity=".4"/>
+        <path d="M5 5.5Q12 9.5 19 5.5M5 18.5Q12 14.5 19 18.5" stroke="white" stroke-width="1.4" opacity=".65"/>
+      </svg>
+    </div>
+    <div><div class="b-nm">PAZ <em>5.0</em></div></div>
+    <span class="b-adm">ADM</span>
+  </div>
+  <div class="hsep"></div>
+  <div class="user-info">
+    <div class="user-av" id="hdr-av">AD</div>
+    <div>
+      <div class="user-nm" id="hdr-nome">Carregando...</div>
+      <div class="user-role" id="hdr-role">administrador</div>
+    </div>
+  </div>
+  <nav class="nav" style="margin-left:auto;">
+    <button class="nb active" onclick="showPage('dashboard')" id="nav-dashboard"><div class="nd"></div><span>Dashboard</span></button>
+    <button class="nb" onclick="showPage('analistas')" id="nav-analistas"><div class="nd"></div><span>Analistas</span></button>
+    <button class="nb" onclick="showPage('tentativas')" id="nav-tentativas"><div class="nd"></div><span>Tentativas</span></button>
+    <button class="nb" onclick="showPage('usuarios')" id="nav-usuarios"><div class="nd"></div><span>Usuários</span></button>
+    <button class="nb" onclick="showPage('logs')" id="nav-logs"><div class="nd"></div><span>Logs</span></button>
+  </nav>
+  <button class="btn-logout" onclick="doLogout()">⏏ Sair</button>
+</header>
+
+<!-- ══════════════════════════════════════════════ DASHBOARD ══ -->
+<div id="page-dashboard" class="page active">
+  <div class="pt">Painel <em>Administrativo</em></div>
+  <div class="ps">Visão geral da operação · todos os analistas</div>
+
+  <div class="mets">
+    <div class="met mt"><div class="mv" id="m-total-ori">—</div><div class="ml">Orientações</div></div>
+    <div class="met ma"><div class="mv" id="m-nota-a">—</div><div class="ml">Nota A</div></div>
+    <div class="met mb"><div class="mv" id="m-nota-b">—</div><div class="ml">Nota B</div></div>
+    <div class="met mc"><div class="mv" id="m-nota-c">—</div><div class="ml">Nota C</div></div>
+    <div class="met mu"><div class="mv" id="m-tentativas">—</div><div class="ml">Tentativas</div></div>
+    <div class="met mp"><div class="mv" id="m-analistas">—</div><div class="ml">Analistas</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+    <div class="card">
+      <div style="font-size:9px;font-weight:800;color:var(--av);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">🏆 Ranking — Orientações</div>
+      <div id="dash-ranking"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:9px;font-weight:800;color:var(--av);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📅 Orientações por Dia (últimos 30 dias)</div>
+      <div style="position:relative;width:100%;height:200px"><canvas id="chartPorDia"></canvas></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <div class="card">
+      <div style="font-size:9px;font-weight:800;color:var(--av);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Distribuição por Nota</div>
+      <div style="position:relative;width:100%;height:180px"><canvas id="chartNotas"></canvas></div>
+    </div>
+    <div class="card">
+      <div style="font-size:9px;font-weight:800;color:var(--av);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">👥 Atividade Recente por Analista</div>
+      <div id="dash-atividade" class="loader"><div class="spin"></div> Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ ANALISTAS ══ -->
+<div id="page-analistas" class="page">
+  <div class="pt">Painel por <em>Analista</em></div>
+  <div class="ps">Clique em um analista para ver todos os dados individuais</div>
+
+  <div class="filtros-row">
+    <input class="sinput" id="busca-anal" placeholder="🔍 Buscar analista..." oninput="filtrarAnalistas()" style="max-width:260px">
+  </div>
+
+  <div class="anal-cards" id="anal-cards">
+    <div class="loader"><div class="spin"></div> Carregando analistas...</div>
+  </div>
+
+  <!-- Detalhes do analista selecionado -->
+  <div id="painel-analista" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+      <div class="anal-av" id="det-av" style="width:52px;height:52px;font-size:18px">AA</div>
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--ap)" id="det-nome">—</div>
+        <div style="font-size:11px;color:var(--txs)" id="det-email">—</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <button class="btno" onclick="fecharPainelAnalista()">← Voltar</button>
+        <button class="btnp" onclick="exportarAnalista()">⬇ Exportar CSV</button>
+      </div>
+    </div>
+
+    <div class="mets" id="det-mets"></div>
+
+    <div class="card" style="padding:0;overflow-x:auto;margin-bottom:14px">
+      <div style="padding:12px 14px;border-bottom:1px solid var(--brd)">
+        <span style="font-size:9px;font-weight:800;color:var(--av);text-transform:uppercase;letter-spacing:1px">Orientações Recentes</span>
+        <select class="fsel" id="det-mes-filtro" onchange="carregarDetalheAnalista()" style="margin-left:10px;font-size:10px">
+          <option value="">Todos os meses</option>
+        </select>
+      </div>
+      <table class="dtbl">
+        <thead><tr><th>Data</th><th>Motorista</th><th>Cliente</th><th>Motivo</th><th>Nota</th><th>Descrição</th></tr></thead>
+        <tbody id="det-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ USUÁRIOS ══ -->
+<div id="page-usuarios" class="page">
+  <div class="pt">Gestão de <em>Usuários</em></div>
+  <div class="ps">Criar, editar, bloquear e gerenciar permissões de acesso</div>
+
+  <div class="filtros-row">
+    <input class="sinput" id="busca-user" placeholder="🔍 Buscar usuário..." oninput="filtrarUsuarios()" style="max-width:260px">
+    <select class="fsel" id="filtro-role" onchange="filtrarUsuarios()">
+      <option value="">Todos os perfis</option>
+      <option value="analista">Analistas</option>
+      <option value="supervisor">Supervisores</option>
+      <option value="admin">Administradores</option>
+    </select>
+    <select class="fsel" id="filtro-status" onchange="filtrarUsuarios()">
+      <option value="">Todos os status</option>
+      <option value="ativo">Ativos</option>
+      <option value="inativo">Inativos</option>
+      <option value="bloqueado">Bloqueados</option>
+    </select>
+    <button class="btnp" onclick="abrirModalCriarUsuario()">+ Novo Usuário</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="dtbl">
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th>Último Login</th><th>Desde</th><th>Ações</th></tr></thead>
+      <tbody id="tbody-usuarios">
+        <tr><td colspan="7"><div class="loader"><div class="spin"></div> Carregando...</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ LOGS ══ -->
+<div id="page-logs" class="page">
+  <div class="pt">Logs de <em>Auditoria</em></div>
+  <div class="ps">Histórico de ações, logins e alterações no sistema</div>
+
+  <div class="filtros-row">
+    <select class="fsel" id="filtro-log-acao" onchange="carregarLogs()">
+      <option value="">Todas as ações</option>
+      <option value="LOGIN">Login</option>
+      <option value="LOGOUT">Logout</option>
+      <option value="CHANGE_PASSWORD">Troca de senha</option>
+      <option value="CREATE_USER">Criação de usuário</option>
+      <option value="UPDATE_USER">Edição de usuário</option>
+      <option value="BLOCK_USER">Bloqueio</option>
+      <option value="UNBLOCK_USER">Desbloqueio</option>
+      <option value="DELETE_MOTORISTA">Exclusão motorista</option>
+      <option value="CLEAR_ALL">Limpar tudo</option>
+    </select>
+    <select class="fsel" id="filtro-log-user" onchange="carregarLogs()">
+      <option value="">Todos os usuários</option>
+    </select>
+    <input class="sinput" type="date" id="filtro-log-inicio" onchange="carregarLogs()" style="max-width:150px">
+    <input class="sinput" type="date" id="filtro-log-fim" onchange="carregarLogs()" style="max-width:150px">
+    <button class="btno" onclick="limparFiltrosLogs()">Limpar filtros</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="dtbl">
+      <thead><tr><th>Data/Hora</th><th>Usuário</th><th>Ação</th><th>Descrição</th><th>User Agent</th></tr></thead>
+      <tbody id="tbody-logs">
+        <tr><td colspan="5"><div class="loader"><div class="spin"></div> Carregando...</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL CRIAR/EDITAR USUÁRIO -->
+<div class="ov" id="ov-usuario" onclick="if(event.target.id==='ov-usuario')fecharModalUsuario()">
+  <div class="modal">
+    <div class="modal-acc"></div>
+    <button class="mcls" onclick="fecharModalUsuario()">✕</button>
+    <div class="mhdr" id="modal-user-titulo">Novo Usuário</div>
+
+    <div id="alerta-modal" style="display:none;background:var(--nc-bg);border:1.5px solid var(--nc-b);border-radius:7px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--nc-t);margin-bottom:14px;"></div>
+
+    <input type="hidden" id="edit-user-id">
+    <div class="fg2">
+      <div class="fg full">
+        <label class="flbl">Nome completo</label>
+        <input class="fi fi-mg" id="u-nome" placeholder="Nome do analista">
+      </div>
+      <div class="fg full">
+        <label class="flbl">E-mail</label>
+        <input class="fi fi-mg" id="u-email" type="email" placeholder="analista@empresa.com">
+      </div>
+      <div class="fg">
+        <label class="flbl">Perfil de acesso</label>
+        <select class="fsel fi-mg" id="u-role" style="width:100%;padding:9px 12px">
+          <option value="analista">Analista</option>
+          <option value="supervisor">Supervisor</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="flbl">Status</label>
+        <select class="fsel fi-mg" id="u-status" style="width:100%;padding:9px 12px">
+          <option value="ativo">Ativo</option>
+          <option value="inativo">Inativo</option>
+          <option value="bloqueado">Bloqueado</option>
+        </select>
+      </div>
+      <div class="fg full" id="campo-senha-wrap">
+        <label class="flbl">Senha inicial</label>
+        <input class="fi fi-mg" id="u-senha" type="password" placeholder="Mín. 8 caracteres">
+        <div style="font-size:10px;color:var(--txs);margin-top:5px">O usuário poderá trocar a senha no primeiro acesso.</div>
+      </div>
+    </div>
+
+    <button class="btnp" style="width:100%;margin-top:16px;justify-content:center" id="btn-salvar-user" onclick="salvarUsuario()">✓ Salvar Usuário</button>
+  </div>
+</div>
+
+<!-- MODAL RESET SENHA -->
+<div class="ov" id="ov-reset" onclick="if(event.target.id==='ov-reset')fecharResetSenha()">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-acc"></div>
+    <button class="mcls" onclick="fecharResetSenha()">✕</button>
+    <div class="mhdr">🔑 Redefinir Senha</div>
+    <div style="font-size:12px;color:var(--txs);margin-bottom:18px;line-height:1.6" id="reset-desc">Enviar link de redefinição de senha para <strong id="reset-email"></strong>?</div>
+    <div style="display:flex;gap:9px">
+      <button class="btno" style="flex:1" onclick="fecharResetSenha()">Cancelar</button>
+      <button class="btnp" style="flex:1;justify-content:center" onclick="confirmarResetSenha()">Enviar Link</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// ⚠️ Substitua pelos valores reais
+const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+// ─── Estado ───────────────────────────────────────────────────
+let currentUser = null, currentProfile = null;
+let todosUsuarios = [], dashData = null;
+let analistaAtivoId = null;
+let charts = {};
+
+// ─── Proteção da página ───────────────────────────────────────
+const { data: { session } } = await sb.auth.getSession();
+if (!session) { window.location.replace('/login.html'); throw 0; }
+currentUser = session.user;
+
+const { data: perfil } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+if (!perfil || !['admin','supervisor'].includes(perfil.role)) {
+  await sb.auth.signOut();
+  window.location.replace('/login.html?erro=sem_permissao');
+  throw 0;
+}
+currentProfile = perfil;
+
+// Header
+const ini = n => { const p=(n||'').trim().split(/\s+/).filter(Boolean); return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():(n||'??').substring(0,2).toUpperCase(); };
+document.getElementById('hdr-av').textContent    = ini(perfil.nome);
+document.getElementById('hdr-nome').textContent  = perfil.nome;
+document.getElementById('hdr-role').textContent  = perfil.role;
+
+// ─── Navegação ────────────────────────────────────────────────
+window.showPage = function(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p)?.classList.add('active');
+  document.getElementById('nav-'+p)?.classList.add('active');
+  if (p === 'dashboard') carregarDashboard();
+  if (p === 'analistas') carregarAnalistasCards();
+  if (p === 'tentativas') carregarTentativas();
+  if (p === 'usuarios')  carregarUsuarios();
+  if (p === 'logs')      carregarLogs();
+};
+
+// ─── Logout ───────────────────────────────────────────────────
+window.doLogout = async function() {
+  if (!confirm('Deseja encerrar a sessão?')) return;
+  try { await sb.from('logs').insert({ acao:'LOGOUT', descricao:'Admin encerrou sessão' }); } catch(_){}
+  await sb.auth.signOut();
+  window.location.replace('/login.html');
+};
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+async function carregarDashboard() {
+  const [resOris, resTents, resUsers] = await Promise.all([
+    sb.from('orientacoes').select('user_id, nota, data_contato, motivo').eq('tipo_registro','orientacao'),
+    sb.from('orientacoes').select('user_id, data_contato').eq('tipo_registro','tentativa'),
+    sb.from('profiles').select('id, nome, email, role, status, ultimo_login')
+  ]);
+
+  const oris   = resOris.data  || [];
+  const tents  = resTents.data || [];
+  const users  = resUsers.data || [];
+  const anals  = users.filter(u => u.role === 'analista' && u.status === 'ativo');
+
+  document.getElementById('m-total-ori').textContent  = oris.length;
+  document.getElementById('m-nota-a').textContent     = oris.filter(o=>o.nota==='A').length;
+  document.getElementById('m-nota-b').textContent     = oris.filter(o=>o.nota==='B').length;
+  document.getElementById('m-nota-c').textContent     = oris.filter(o=>o.nota==='C').length;
+  document.getElementById('m-tentativas').textContent = tents.length;
+  document.getElementById('m-analistas').textContent  = anals.length;
+
+  // Ranking
+  const contaOri = {};
+  oris.forEach(o => { contaOri[o.user_id] = (contaOri[o.user_id]||0)+1; });
+
+  const rankOrdenado = anals
+    .map(u => ({ ...u, total: contaOri[u.id]||0 }))
+    .sort((a,b) => b.total - a.total);
+  const maxOri = rankOrdenado[0]?.total || 1;
+
+  document.getElementById('dash-ranking').innerHTML = rankOrdenado.slice(0,8).map((u,i) => {
+    const cl = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return `<div class="rank-row">
+      <div class="rank-pos ${cl}">${i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.nome)}</div>
+        <div class="rank-bar-w"><div class="rank-bar" style="width:${(u.total/maxOri*100).toFixed(0)}%"></div></div>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--av);width:36px;text-align:right">${u.total}</div>
+    </div>`;
+  }).join('') || '<div style="color:var(--txs);font-size:11px;padding:10px">Sem dados</div>';
+
+  // Gráfico por dia
+  const porDia = {};
+  const hoje = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(hoje); d.setDate(d.getDate()-i);
+    porDia[d.toISOString().split('T')[0]] = 0;
+  }
+  oris.forEach(o => { if (porDia.hasOwnProperty(o.data_contato)) porDia[o.data_contato]++; });
+  const diasLabels = Object.keys(porDia).map(d => {
+    const [yyyy,mm,dd] = d.split('-'); return dd+'/'+mm;
+  });
+  if (charts.dia) { charts.dia.destroy(); delete charts.dia; }
+  const c1 = document.getElementById('chartPorDia');
+  if (c1) charts.dia = new Chart(c1,{type:'bar',data:{labels:diasLabels,datasets:[{data:Object.values(porDia),backgroundColor:'rgba(0,119,200,.7)',borderRadius:4,label:'Orientações'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:8},maxRotation:45,autoSkip:true,maxTicksLimit:15},grid:{display:false}},y:{ticks:{font:{size:9},precision:0,maxTicksLimit:5},grid:{color:'rgba(0,0,0,.05)'}}}}});
+
+  // Gráfico notas
+  if (charts.notas) { charts.notas.destroy(); delete charts.notas; }
+  const c2 = document.getElementById('chartNotas');
+  if (c2) charts.notas = new Chart(c2,{type:'doughnut',data:{labels:['Nota A','Nota B','Nota C'],datasets:[{data:[oris.filter(o=>o.nota==='A').length,oris.filter(o=>o.nota==='B').length,oris.filter(o=>o.nota==='C').length],backgroundColor:['#1D9E75','#D4960A','#C0392B'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10,weight:'700'},boxWidth:10,padding:8}}}}});
+
+  // Atividade por analista
+  const hoje7 = new Date(); hoje7.setDate(hoje7.getDate()-7);
+  const ini7  = hoje7.toISOString().split('T')[0];
+  const atividade = anals.map(u => ({
+    ...u,
+    semana: oris.filter(o=>o.user_id===u.id&&o.data_contato>=ini7).length,
+    total:  contaOri[u.id]||0
+  })).sort((a,b)=>b.semana-a.semana);
+
+  document.getElementById('dash-atividade').innerHTML = atividade.length
+    ? atividade.map(u => `
+        <div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--brd)">
+          <div style="width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--av),var(--ap));display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:900;flex-shrink:0">${ini(u.nome)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.nome)}</div>
+            <div style="font-size:9px;color:var(--txs)">Último login: ${u.ultimo_login?fmtDT(u.ultimo_login):'Nunca'}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:${u.semana>0?'var(--na-b)':'var(--txs)'}">${u.semana}</div>
+            <div style="font-size:8px;color:var(--txs)">esta semana</div>
+          </div>
+        </div>`).join('')
+    : '<div style="color:var(--txs);font-size:11px;padding:10px">Sem analistas ativos</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANALISTAS — cards + detalhes
+// ═══════════════════════════════════════════════════════════════
+let todosAnalistas = [];
+
+async function carregarAnalistasCards() {
+  const { data: analistas } = await sb.from('profiles').select('*').eq('role','analista').order('nome');
+  todosAnalistas = analistas || [];
+  renderAnalistasCards(todosAnalistas);
+}
+
+function renderAnalistasCards(lista) {
+  const el = document.getElementById('anal-cards');
+  if (!lista.length) { el.innerHTML = '<div style="color:var(--txs);font-size:12px;padding:16px">Nenhum analista encontrado.</div>'; return; }
+
+  el.innerHTML = lista.map(u => `
+    <div class="anal-card" onclick="abrirPainelAnalista('${u.id}','${esc(u.nome)}','${esc(u.email||'')}')">
+      <div class="anal-av">${ini(u.nome)}</div>
+      <div style="font-size:12px;font-weight:800;color:var(--ap);margin-bottom:4px">${esc(u.nome)}</div>
+      <div style="font-size:10px;color:var(--txs);margin-bottom:8px">${esc(u.email||'')}</div>
+      <span class="badge badge-${u.status}">${u.status}</span>
+      <div style="font-size:9px;color:var(--txs);margin-top:7px">Último login: ${u.ultimo_login?fmtDT(u.ultimo_login):'Nunca'}</div>
+    </div>`).join('');
+}
+
+window.filtrarAnalistas = function() {
+  const q = document.getElementById('busca-anal').value.toLowerCase();
+  renderAnalistasCards(todosAnalistas.filter(u => u.nome.toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q)));
+};
+
+window.abrirPainelAnalista = async function(userId, nome, email) {
+  analistaAtivoId = userId;
+  document.getElementById('anal-cards').style.display = 'none';
+  document.getElementById('painel-analista').style.display = 'block';
+  document.getElementById('det-av').textContent   = ini(nome);
+  document.getElementById('det-nome').textContent = nome;
+  document.getElementById('det-email').textContent = email;
+  document.getElementById('det-mets').innerHTML   = '<div class="loader"><div class="spin"></div></div>';
+  document.getElementById('det-tbody').innerHTML  = '<tr><td colspan="6"><div class="loader"><div class="spin"></div></div></td></tr>';
+  await carregarDetalheAnalista();
+};
+
+window.carregarDetalheAnalista = async function() {
+  if (!analistaAtivoId) return;
+  const mesFiltro = document.getElementById('det-mes-filtro').value;
+
+  const [resOri, resTent, resMots] = await Promise.all([
+    sb.from('orientacoes').select('*').eq('user_id', analistaAtivoId).eq('tipo_registro','orientacao').order('data_contato',{ascending:false}),
+    sb.from('orientacoes').select('*').eq('user_id', analistaAtivoId).eq('tipo_registro','tentativa'),
+    sb.from('motoristas').select('*').eq('user_id', analistaAtivoId)
+  ]);
+
+  let oris  = resOri.data  || [];
+  let tents = resTent.data || [];
+
+  if (mesFiltro) {
+    const [mm,yyyy] = mesFiltro.split('/'); // "Mai/2025"
+    // Filtro por ano e mês
+    oris  = oris.filter(o => o.data_contato?.startsWith(yyyy + '-' + mm.padStart(2,'0')));
+    tents = tents.filter(t => t.data_contato?.startsWith(yyyy + '-' + mm.padStart(2,'0')));
+  }
+
+  // Métricas
+  document.getElementById('det-mets').innerHTML = `
+    <div class="met mt"><div class="mv">${oris.length}</div><div class="ml">Orientações</div></div>
+    <div class="met ma"><div class="mv">${oris.filter(o=>o.nota==='A').length}</div><div class="ml">Nota A</div></div>
+    <div class="met mb"><div class="mv">${oris.filter(o=>o.nota==='B').length}</div><div class="ml">Nota B</div></div>
+    <div class="met mc"><div class="mv">${oris.filter(o=>o.nota==='C').length}</div><div class="ml">Nota C</div></div>
+    <div class="met mu"><div class="mv">${tents.length}</div><div class="ml">Tentativas</div></div>
+    <div class="met mp"><div class="mv">${(resOri.data||[]).length ? ((oris.filter(o=>o.nota==='A').length/oris.length*100)||0).toFixed(0)+'%' : '—'}</div><div class="ml">% Nota A</div></div>`;
+
+  // Preencher filtro de meses
+  const meses = [...new Set((resOri.data||[]).map(o => {
+    if (!o.data_contato) return null;
+    const [yyyy,mm] = o.data_contato.split('-');
+    const nms=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return nms[parseInt(mm)-1]+'/'+yyyy;
+  }).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+
+  const selMes = document.getElementById('det-mes-filtro');
+  const curVal = selMes.value;
+  selMes.innerHTML = '<option value="">Todos os meses</option>' + meses.map(m=>`<option ${m===curVal?'selected':''}>${m}</option>`).join('');
+
+  // Tabela
+  document.getElementById('det-tbody').innerHTML = oris.slice(0,100).map(o => `
+    <tr>
+      <td style="white-space:nowrap">${fmtData(o.data_contato)}</td>
+      <td style="font-weight:700">${esc(o.motorista_nome)}</td>
+      <td style="font-size:11px">${esc(o.cliente)}</td>
+      <td style="font-size:11px;color:var(--ci)">${esc(o.motivo)}</td>
+      <td><span class="badge badge-${o.nota||'none'}">${o.nota||'—'}</span></td>
+      <td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.descricao||'—')}</td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px">Sem registros</td></tr>';
+};
+
+window.fecharPainelAnalista = function() {
+  analistaAtivoId = null;
+  document.getElementById('anal-cards').style.display = 'grid';
+  document.getElementById('painel-analista').style.display = 'none';
+};
+
+window.exportarAnalista = async function() {
+  if (!analistaAtivoId) return;
+  const { data } = await sb.from('orientacoes').select('*').eq('user_id',analistaAtivoId).eq('tipo_registro','orientacao').order('data_contato',{ascending:false});
+  if (!data?.length) { showToast('Sem dados para exportar'); return; }
+  const linhas = [['Data','Motorista','CPF','Cliente','Motivo','Nota','Descrição']];
+  data.forEach(r => linhas.push([r.data_contato,r.motorista_nome,r.motorista_cpf,r.cliente,r.motivo,r.nota||'',r.descricao||'']));
+  const csv = linhas.map(l=>l.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='analista_'+analistaAtivoId.slice(0,8)+'.csv'; a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ═══════════════════════════════════════════════════════════════
+// USUÁRIOS
+// ═══════════════════════════════════════════════════════════════
+async function carregarUsuarios() {
+  const { data, error } = await sb.from('profiles').select('*').order('created_at',{ascending:false});
+  todosUsuarios = data || [];
+  filtrarUsuarios();
+
+  // Preencher select de usuário nos logs
+  const selLogUser = document.getElementById('filtro-log-user');
+  selLogUser.innerHTML = '<option value="">Todos os usuários</option>' +
+    todosUsuarios.map(u => `<option value="${u.id}">${esc(u.nome)}</option>`).join('');
+}
+
+window.filtrarUsuarios = function() {
+  const q      = (document.getElementById('busca-user')?.value||'').toLowerCase();
+  const role   = document.getElementById('filtro-role')?.value  || '';
+  const status = document.getElementById('filtro-status')?.value|| '';
+
+  const lista = todosUsuarios.filter(u =>
+    (!q      || u.nome.toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q)) &&
+    (!role   || u.role   === role)   &&
+    (!status || u.status === status)
+  );
+
+  document.getElementById('tbody-usuarios').innerHTML = lista.length
+    ? lista.map(u => `
+        <tr>
+          <td style="font-weight:700">${esc(u.nome)}</td>
+          <td style="font-size:11px;color:var(--txs)">${esc(u.email||'')}</td>
+          <td><span class="badge badge-${u.role}">${u.role}</span></td>
+          <td><span class="badge badge-${u.status}">${u.status}</span></td>
+          <td style="font-size:11px;color:var(--txs)">${u.ultimo_login?fmtDT(u.ultimo_login):'Nunca'}</td>
+          <td style="font-size:11px;color:var(--txs)">${fmtData(u.created_at?.split('T')[0])}</td>
+          <td>
+            <div class="act-btns">
+              <button class="btn-eye" onclick="editarUsuario('${u.id}')">✏ Editar</button>
+              <button class="btn-rst" onclick="abrirResetSenha('${u.id}','${esc(u.email||'')}')">🔑 Reset</button>
+              ${u.status==='bloqueado'
+                ? `<button class="btn-ok" onclick="alterarStatus('${u.id}','ativo')">✓ Ativar</button>`
+                : `<button class="btn-blk" onclick="alterarStatus('${u.id}','bloqueado')">🔒 Bloquear</button>`}
+            </div>
+          </td>
+        </tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:24px">Nenhum usuário encontrado.</td></tr>';
+};
+
+window.abrirModalCriarUsuario = function() {
+  document.getElementById('edit-user-id').value = '';
+  document.getElementById('modal-user-titulo').textContent = 'Novo Usuário';
+  document.getElementById('u-nome').value   = '';
+  document.getElementById('u-email').value  = '';
+  document.getElementById('u-role').value   = 'analista';
+  document.getElementById('u-status').value = 'ativo';
+  document.getElementById('u-senha').value  = '';
+  document.getElementById('campo-senha-wrap').style.display = 'block';
+  document.getElementById('alerta-modal').style.display = 'none';
+  document.getElementById('ov-usuario').classList.add('open');
+};
+
+window.editarUsuario = function(userId) {
+  const u = todosUsuarios.find(x => x.id === userId);
+  if (!u) return;
+  document.getElementById('edit-user-id').value = userId;
+  document.getElementById('modal-user-titulo').textContent = 'Editar Usuário';
+  document.getElementById('u-nome').value   = u.nome;
+  document.getElementById('u-email').value  = u.email||'';
+  document.getElementById('u-role').value   = u.role;
+  document.getElementById('u-status').value = u.status;
+  document.getElementById('campo-senha-wrap').style.display = 'none';
+  document.getElementById('alerta-modal').style.display = 'none';
+  document.getElementById('ov-usuario').classList.add('open');
+};
+
+window.fecharModalUsuario = function() {
+  document.getElementById('ov-usuario').classList.remove('open');
+};
+
+window.salvarUsuario = async function() {
+  const userId = document.getElementById('edit-user-id').value;
+  const nome   = document.getElementById('u-nome').value.trim();
+  const email  = document.getElementById('u-email').value.trim().toLowerCase();
+  const role   = document.getElementById('u-role').value;
+  const status = document.getElementById('u-status').value;
+  const senha  = document.getElementById('u-senha').value;
+  const alerta = document.getElementById('alerta-modal');
+
+  alerta.style.display = 'none';
+
+  if (!nome || !email) { alerta.textContent='⚠ Preencha nome e e-mail.'; alerta.style.display='block'; return; }
+
+  const btn = document.getElementById('btn-salvar-user');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    if (userId) {
+      // Atualizar perfil existente
+      const { error } = await sb.from('profiles').update({ nome, role, status }).eq('id', userId);
+      if (error) throw error;
+      try { await sb.from('logs').insert({ acao:'UPDATE_USER', descricao:`Admin atualizou ${email}: role=${role}, status=${status}` }); } catch(_){}
+      showToast('✓ Usuário atualizado!');
+    } else {
+      // Criar novo usuário via Edge Function (mantém service_role no backend)
+      if (!senha || senha.length < 8) { throw new Error('Senha deve ter pelo menos 8 caracteres.'); }
+      const { data: { session: sess } } = await sb.auth.getSession();
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/criar-usuario`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + sess.access_token
+        },
+        body: JSON.stringify({ email, senha, nome, role })
+      });
+      if (!resp.ok) {
+        const msg = await resp.text();
+        throw new Error(msg || 'Erro ao criar usuário');
+      }
+      showToast('✓ Usuário criado! E-mail: ' + email);
+    }
+
+    fecharModalUsuario();
+    await carregarUsuarios();
+  } catch (e) {
+    alerta.textContent = '⚠ ' + e.message;
+    alerta.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✓ Salvar Usuário';
+  }
+};
+
+window.alterarStatus = async function(userId, novoStatus) {
+  const confirmMsg = novoStatus === 'bloqueado'
+    ? 'Bloquear este usuário? Ele não conseguirá mais fazer login.'
+    : 'Reativar este usuário?';
+  if (!confirm(confirmMsg)) return;
+
+  const { error } = await sb.from('profiles').update({ status: novoStatus }).eq('id', userId);
+  if (error) { showToast('❌ Erro: ' + error.message); return; }
+  try { await sb.from('logs').insert({ acao: novoStatus==='bloqueado'?'BLOCK_USER':'UNBLOCK_USER', descricao:`Admin alterou status de ${userId} para ${novoStatus}` }); } catch(_){}
+  showToast('✓ Status alterado para: ' + novoStatus);
+  await carregarUsuarios();
+};
+
+// ─── Reset de senha ─────────────────────────────────────────
+let resetUserId = '', resetUserEmail = '';
+window.abrirResetSenha = function(userId, email) {
+  resetUserId = userId; resetUserEmail = email;
+  document.getElementById('reset-email').textContent = email;
+  document.getElementById('ov-reset').classList.add('open');
+};
+window.fecharResetSenha = function() {
+  document.getElementById('ov-reset').classList.remove('open');
+};
+window.confirmarResetSenha = async function() {
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(resetUserEmail, {
+      redirectTo: window.location.origin + '/login.html'
+    });
+    if (error) throw error;
+    try { await sb.from('logs').insert({ acao:'RESET_PASSWORD', descricao:`Admin enviou reset de senha para ${resetUserEmail}` }); } catch(_){}
+    showToast('✓ Link de redefinição enviado para ' + resetUserEmail);
+    fecharResetSenha();
+  } catch(e) {
+    showToast('❌ Erro: ' + e.message);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// LOGS
+// ═══════════════════════════════════════════════════════════════
+window.carregarLogs = async function() {
+  const acao   = document.getElementById('filtro-log-acao')?.value  || '';
+  const userId = document.getElementById('filtro-log-user')?.value  || '';
+  const inicio = document.getElementById('filtro-log-inicio')?.value || '';
+  const fim    = document.getElementById('filtro-log-fim')?.value    || '';
+
+  document.getElementById('tbody-logs').innerHTML = '<tr><td colspan="5"><div class="loader"><div class="spin"></div> Carregando...</div></td></tr>';
+
+  let query = sb.from('logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(300);
+
+  if (acao)   query = query.eq('acao', acao);
+  if (userId) query = query.eq('user_id', userId);
+  if (inicio) query = query.gte('created_at', inicio);
+  if (fim)    query = query.lte('created_at', fim + 'T23:59:59');
+
+  const { data, error } = await query;
+  if (error) { document.getElementById('tbody-logs').innerHTML = '<tr><td colspan="5" style="color:red;padding:16px">Erro ao carregar logs</td></tr>'; return; }
+
+  const logs = data || [];
+  document.getElementById('tbody-logs').innerHTML = logs.length
+    ? logs.map(l => {
+        const acaoClass = `la-${l.acao}`;
+        const nomeUser  = l.user_id?.substring(0, 8) || '(sistema)';
+        return `<tr>
+          <td style="white-space:nowrap;font-size:11px">${fmtDT(l.created_at)}</td>
+          <td style="font-weight:700;font-size:11px">${esc(nomeUser)}</td>
+          <td><span class="log-acao ${acaoClass} la-default">${l.acao}</span></td>
+          <td style="font-size:11px;color:var(--txs);max-width:300px">${esc(l.descricao||'—')}</td>
+          <td style="font-size:9px;color:var(--txs);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((l.user_agent||'').split(' ').slice(-1)[0]||'—')}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:32px">Nenhum log encontrado.</td></tr>';
+};
+
+window.limparFiltrosLogs = function() {
+  document.getElementById('filtro-log-acao').value  = '';
+  document.getElementById('filtro-log-user').value  = '';
+  document.getElementById('filtro-log-inicio').value = '';
+  document.getElementById('filtro-log-fim').value    = '';
+  carregarLogs();
+};
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+function esc(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtData(v){if(!v)return'—';const[yyyy,mm,dd]=(v+'').split('-');return dd+'/'+mm+'/'+yyyy;}
+function fmtDT(v){if(!v)return'—';const d=new Date(v);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+
+// ─── Iniciar ───────────────────────────────────────────────────
+carregarDashboard();
+await carregarUsuarios(); // pré-carrega lista de usuários para o select de logs
+
+// ════════════════════════════════════════════════════════
+// TENTATIVAS
+// ════════════════════════════════════════════════════════
+window.carregarTentativas = async function() {
+  const [resTents, resUsers] = await Promise.all([
+    sb.from('orientacoes')
+      .select('*')
+      .eq('tipo_registro', 'tentativa')
+      .order('data_contato', { ascending: false }),
+    sb.from('profiles').select('id, nome')
+  ]);
+  
+  const tents = resTents.data || [];
+  const errTents = resTents.error;
+  const usersMap = {};
+  (resUsers.data || []).forEach(u => { usersMap[u.id] = u.nome; });
+
+  if (errTents) { showToast('❌ Erro ao carregar tentativas'); return; }
+
+  // Atualizar métrica
+  document.getElementById('m-tentativas').textContent = (tents || []).length;
+
+  // Agrupar por analista
+  const byAnalista = {};
+  (tents || []).forEach(t => {
+    const anal = usersMap[t.user_id] || t.user_id?.substring(0, 8) || '(sistema)';
+    if (!byAnalista[anal]) byAnalista[anal] = [];
+    byAnalista[anal].push(t);
+  });
+
+  // Agrupar por tipo de tentativa
+  const byTipo = {};
+  (tents || []).forEach(t => {
+    const tipo = t.motivo || 'Sem motivo';
+    if (!byTipo[tipo]) byTipo[tipo] = 0;
+    byTipo[tipo]++;
+  });
+
+  // Cards por analista
+  const cards = Object.entries(byAnalista).map(([anal, lista]) => {
+    const tipos = new Set(lista.map(t => t.motivo));
+    return `
+      <div style="background:white;border-radius:10px;padding:14px;border-left:4px solid var(--ci)">
+        <div style="font-weight:700;font-size:13px;color:var(--ap)">${anal}</div>
+        <div style="font-size:11px;color:var(--txs);margin-top:4px">Tentativas: <span style="font-weight:700;color:var(--ci)">${lista.length}</span></div>
+        <div style="font-size:11px;color:var(--txs);margin-top:2px">Tipos: <span style="font-weight:700">${tipos.size}</span></div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('cards-tentativas').innerHTML = cards || '<div style="grid-column:1/-1;color:var(--txs);text-align:center;padding:20px">Sem tentativas</div>';
+
+  // Gráfico de distribuição por tipo
+  const tipos = Object.keys(byTipo).slice(0, 10); // top 10
+  const cores = ['#0077C8','#00B4CC','#A8CC00','#C0392B','#D4960A','#9B59B6','#1ABC9C','#E74C3C','#F39C12','#2980B9'];
+  const chartEl = document.getElementById('chartTentativasTipo');
+  if (chartEl && tipos.length) {
+    if (window.charts?.chartTentativas) window.charts.chartTentativas.destroy();
+    window.charts = window.charts || {};
+    window.charts.chartTentativas = new Chart(chartEl, {
+      type: 'doughnut',
+      data: {
+        labels: tipos,
+        datasets: [{
+          data: tipos.map(t => byTipo[t]),
+          backgroundColor: cores.slice(0, tipos.length),
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } } }
+    });
+  }
+
+  // Tabela por analista
+  const rows = Object.entries(byAnalista).map(([anal, lista]) => {
+    const tipos = new Set(lista.map(t => t.motivo)).size;
+    return `<tr>
+      <td style="padding:10px;border-bottom:1px solid #eee">${anal}</td>
+      <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;font-weight:700;color:var(--ci)">${lista.length}</td>
+      <td style="padding:10px;border-bottom:1px solid #eee;text-align:center">${tipos}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tbody-tentativas').innerHTML = rows || '<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--txs)">Sem dados</td></tr>';
+};
+
+</script>
+</body>
+</html>  </div>
+
+  <div id="page-tentativas" class="page">
+    <div class="pt">Relatório de <em>Tentativas</em></div>
+    <div class="ps">Tipo de contato · quantidade por analista · total</div>
+    
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:20px" id="cards-tentativas"></div>
+    
+    <div style="background:white;border-radius:12px;padding:16px;margin-bottom:16px">
+      <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--ap);margin-bottom:12px">Distribuição por Tipo</h3>
+      <canvas id="chartTentativasTipo" style="max-height:250px"></canvas>
+    </div>
+
+    <div style="background:white;border-radius:12px;padding:16px;margin-bottom:16px">
+      <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--ap);margin-bottom:12px">Por Analista</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead style="background:var(--bg);border-bottom:1px solid #ddd">
+          <tr>
+            <th style="padding:10px;text-align:left;font-weight:700">Analista</th>
+            <th style="padding:10px;text-align:center;font-weight:700">Tentativas</th>
+            <th style="padding:10px;text-align:center;font-weight:700">Tipos Únicos</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-tentativas" style="border-bottom:1px solid #ddd"></tbody>
+      </table>
+    </div>
+
+  <div class="pt">Relatório de <em>Tentativas</em></div>
+    <div class="ps">Tipo de contato · quantidade por analista · total</div>
+
