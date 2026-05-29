@@ -251,12 +251,13 @@ body::before{
   </div>
 </div>
 
-<script type="module">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
 // ═══════════════════════════════════════════════════════════
 // CONFIGURAÇÃO SUPABASE
 // ⚠️ Substitua pelos valores reais do seu projeto
 // ═══════════════════════════════════════════════════════════
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const { createClient } = supabase;
 
 const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
@@ -269,20 +270,23 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
   }
 });
 
-// ─── Verificar se já está logado ──────────────────────────
-const { data: { session: sessaoAtual } } = await sb.auth.getSession();
-if (sessaoAtual) {
-  redirecionarPorRole(sessaoAtual.user.id);
-}
+// ─── Inicialização assíncrona ──────────────────────────────
+(async function init() {
+  // Verificar se já está logado
+  const { data: { session: sessaoAtual } } = await sb.auth.getSession();
+  if (sessaoAtual) {
+    redirecionarPorRole(sessaoAtual.user.id);
+    return;
+  }
 
-// ─── Verificar hash de reset de senha ─────────────────────
-const hash = window.location.hash;
-if (hash.includes('type=recovery') || hash.includes('access_token')) {
-  // Modo redefinição de senha
-  document.getElementById('form-login').classList.remove('active');
-  document.getElementById('form-nova-senha').classList.add('active');
-  mostrarAlerta('✓ Sessão recuperada. Defina uma nova senha abaixo.', 'ok');
-}
+  // Verificar hash de reset de senha
+  const hash = window.location.hash;
+  if (hash.includes('type=recovery') || hash.includes('access_token')) {
+    document.getElementById('form-login').classList.remove('active');
+    document.getElementById('form-nova-senha').classList.add('active');
+    mostrarAlerta('✓ Sessão recuperada. Defina uma nova senha abaixo.', 'ok');
+  }
+})();
 
 // ═══════════════════════════════════════════════════════════
 // LOGIN
