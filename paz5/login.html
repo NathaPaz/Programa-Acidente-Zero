@@ -1,245 +1,448 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PAZ 5.0 — Login</title>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+// ═══════════════════════════════════════════════════════════
+// CONFIGURAÇÃO SUPABASE
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
 
-<style>
-body{
-  font-family:Arial, sans-serif;
-  background:#0A3D6B;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-  margin:0;
-}
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
 
-.card{
-  background:#fff;
-  width:350px;
-  padding:30px;
-  border-radius:14px;
-  box-shadow:0 10px 30px rgba(0,0,0,.2);
-}
-
-h1{
-  margin-top:0;
-  color:#0A3D6B;
-}
-
-input{
-  width:100%;
-  padding:12px;
-  margin-bottom:12px;
-  border:1px solid #ccc;
-  border-radius:8px;
-  box-sizing:border-box;
-}
-
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:8px;
-  background:#0077C8;
-  color:#fff;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-button:hover{
-  opacity:.9;
-}
-
-.alerta{
-  margin-bottom:12px;
-  padding:10px;
-  border-radius:8px;
-  display:none;
-}
-
-.erro{
-  background:#ffdede;
-  color:#8a0000;
-}
-
-.ok{
-  background:#dfffe0;
-  color:#006b1b;
-}
-</style>
-</head>
-<body>
-
-<div class="card">
-
-  <h1>PAZ 5.0</h1>
-
-  <div id="alerta" class="alerta"></div>
-
-  <input
-    type="email"
-    id="email"
-    placeholder="Seu e-mail"
-  >
-
-  <input
-    type="password"
-    id="senha"
-    placeholder="Sua senha"
-    onkeydown="if(event.key==='Enter') doLogin()"
-  >
-
-  <button id="btnLogin" onclick="doLogin()">
-    Entrar
-  </button>
-
-</div>
-
-<script>
-const SUPABASE_URL = 'https://ztvsszhlniirmqdavgzu.supabase.co';
-
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
-
-const sb = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-
-function mostrarAlerta(msg, tipo='erro') {
-
-  const alerta = document.getElementById('alerta');
-
-  alerta.style.display = 'block';
-  alerta.className = 'alerta ' + tipo;
-  alerta.innerText = msg;
-}
-
-function esconderAlerta() {
-
-  document.getElementById('alerta').style.display = 'none';
-}
-
-function setLoading(loading){
-
-  const btn = document.getElementById('btnLogin');
-
-  if(loading){
-    btn.disabled = true;
-    btn.innerText = 'Entrando...';
-  }else{
-    btn.disabled = false;
-    btn.innerText = 'Entrar';
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
   }
-}
+});
 
-window.doLogin = async function(){
+// ─── Inicialização assíncrona ──────────────────────────────
+(async function init() {
 
-  esconderAlerta();
+  const { data: { session: sessaoAtual } } =
+    await sb.auth.getSession();
 
-  const email = document
-    .getElementById('email')
-    .value
-    .trim()
-    .toLowerCase();
-
-  const senha = document
-    .getElementById('senha')
-    .value;
-
-  if(!email || !senha){
-
-    mostrarAlerta('Preencha e-mail e senha.');
+  if (sessaoAtual) {
+    redirecionarPorRole(sessaoAtual.user.id);
     return;
   }
 
-  setLoading(true);
+  const hash = window.location.hash;
 
-  try{
+  if (
+    hash.includes('type=recovery') ||
+    hash.includes('access_token')
+  ) {
 
-    // LOGIN
+    document
+      .getElementById('form-login')
+      .classList.remove('active');
+
+    document
+      .getElementById('form-nova-senha')
+      .classList.add('active');
+
+    mostrarAlerta(
+      '✓ Sessão recuperada. Defina uma nova senha abaixo.',
+      'ok'
+    );
+  }
+})();
+
+// ═══════════════════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════════════════
+window.doLogin = async function() {
+
+  const email =
+    document
+      .getElementById('inp-email')
+      .value
+      .trim()
+      .toLowerCase();
+
+  const senha =
+    document
+      .getElementById('inp-senha')
+      .value;
+
+  const btn =
+    document.getElementById('btn-login');
+
+  esconderAlerta();
+
+  if (!email || !senha) {
+    mostrarAlerta(
+      '⚠ Preencha e-mail e senha.',
+      'erro'
+    );
+    return;
+  }
+
+  setLoading(btn, true);
+
+  try {
+
     const { data, error } =
       await sb.auth.signInWithPassword({
         email,
         password: senha
       });
 
-    if(error){
-      throw error;
-    }
+    if (error) throw error;
 
-    console.log('LOGIN OK', data);
+    console.log('LOGIN OK:', data);
 
-    // BUSCAR PERFIL
-    const { data: perfil, error: perfilErro } =
+    const { data: perfil, error: perfilErr } =
       await sb
         .from('profiles')
-        .select('*')
+        .select('status, role, nome')
         .eq('id', data.user.id)
         .single();
 
-    console.log('PERFIL', perfil);
+    console.log('PERFIL:', perfil);
 
-    if(perfilErro){
-
-      console.error(perfilErro);
-
-      mostrarAlerta(
-        'Usuário autenticado, mas perfil não encontrado.'
+    if (perfilErr) {
+      console.error(perfilErr);
+      throw new Error(
+        'Não foi possível carregar o perfil.'
       );
-
-      setLoading(false);
-      return;
     }
 
-    // STATUS
-    if(perfil.status === 'bloqueado'){
+    if (perfil.status === 'bloqueado') {
 
       await sb.auth.signOut();
 
-      mostrarAlerta('Conta bloqueada.');
-      setLoading(false);
-
-      return;
+      throw new Error(
+        'Sua conta foi bloqueada.'
+      );
     }
 
-    // REDIRECIONAR
-    if(
-      perfil.role === 'admin' ||
-      perfil.role === 'supervisor'
-    ){
+    if (perfil.status === 'inativo') {
 
-      window.location.href = 'admin.html';
+      await sb.auth.signOut();
 
-    }else{
-
-      window.location.href = 'index.html';
+      throw new Error(
+        'Sua conta está inativa.'
+      );
     }
 
-  }catch(e){
+    // OPCIONAL
+    // comente se não existir no banco
+    /*
+    await sb.rpc('update_last_login', {
+      uid: data.user.id
+    });
+    */
+
+    // OPCIONAL
+    // comente se logs der erro
+    /*
+    await sb.from('logs').insert({
+      acao: 'LOGIN',
+      descricao: `Login bem-sucedido: ${email}`,
+      user_agent: navigator.userAgent
+    });
+    */
+
+    redirecionarPorRole(
+      data.user.id,
+      perfil.role
+    );
+
+  } catch (e) {
 
     console.error(e);
 
-    let msg = e.message || 'Erro no login';
+    let msg =
+      e.message || 'Erro ao fazer login.';
 
-    if(msg.includes('Invalid login credentials')){
-      msg = 'E-mail ou senha inválidos';
+    if (
+      msg.includes('Invalid login credentials')
+    ) {
+      msg = 'E-mail ou senha incorretos.';
     }
 
-    if(msg.includes('Email not confirmed')){
-      msg = 'Confirme seu e-mail';
+    if (
+      msg.includes('Email not confirmed')
+    ) {
+      msg = 'Confirme seu e-mail antes de entrar.';
     }
 
-    mostrarAlerta(msg);
+    if (
+      msg.includes('Too many requests')
+    ) {
+      msg =
+        'Muitas tentativas. Aguarde alguns minutos.';
+    }
 
-    setLoading(false);
+    mostrarAlerta('⚠ ' + msg, 'erro');
+
+    setLoading(btn, false);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// NOVA SENHA
+// ═══════════════════════════════════════════════════════════
+window.doNovaSenha = async function() {
+
+  const nova =
+    document.getElementById('inp-nova').value;
+
+  const nova2 =
+    document.getElementById('inp-nova2').value;
+
+  const btn =
+    document.getElementById('btn-nova');
+
+  esconderAlerta();
+
+  if (!nova || nova.length < 8) {
+
+    mostrarAlerta(
+      '⚠ A senha deve ter pelo menos 8 caracteres.',
+      'erro'
+    );
+
+    return;
+  }
+
+  if (nova !== nova2) {
+
+    mostrarAlerta(
+      '⚠ As senhas não coincidem.',
+      'erro'
+    );
+
+    return;
+  }
+
+  setLoading(btn, true);
+
+  try {
+
+    const { error } =
+      await sb.auth.updateUser({
+        password: nova
+      });
+
+    if (error) throw error;
+
+    mostrarAlerta(
+      '✓ Senha alterada com sucesso!',
+      'ok'
+    );
+
+    setTimeout(() => {
+      window.location.href = 'index.html';
+    }, 2000);
+
+  } catch (e) {
+
+    console.error(e);
+
+    mostrarAlerta(
+      '⚠ ' + (e.message || 'Erro ao alterar senha.'),
+      'erro'
+    );
+
+    setLoading(btn, false);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// RECUPERAÇÃO
+// ═══════════════════════════════════════════════════════════
+window.abrirRecuperacao = function() {
+
+  document
+    .getElementById('recovery-overlay')
+    .classList.add('open');
+
+  setTimeout(() => {
+
+    document
+      .getElementById('inp-rec-email')
+      .focus();
+
+  }, 100);
+};
+
+window.fecharRecuperacao = function() {
+
+  document
+    .getElementById('recovery-overlay')
+    .classList.remove('open');
+
+  document
+    .getElementById('alerta-rec')
+    .classList.remove('show');
+};
+
+window.doRecuperacao = async function() {
+
+  const email =
+    document
+      .getElementById('inp-rec-email')
+      .value
+      .trim()
+      .toLowerCase();
+
+  const btn =
+    document.getElementById('btn-rec');
+
+  const alerta =
+    document.getElementById('alerta-rec');
+
+  alerta.classList.remove('show');
+
+  if (!email) {
+
+    alerta.textContent =
+      '⚠ Digite seu e-mail.';
+
+    alerta.className =
+      'alerta erro show';
+
+    return;
+  }
+
+  setLoading(btn, true);
+
+  try {
+
+    const { error } =
+      await sb.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo:
+            window.location.origin + '/login'
+        }
+      );
+
+    if (error) throw error;
+
+    alerta.textContent =
+      '✓ Link enviado para ' + email;
+
+    alerta.className =
+      'alerta ok show';
+
+    setLoading(btn, false, 'Enviar Link');
+
+  } catch (e) {
+
+    console.error(e);
+
+    alerta.textContent =
+      '⚠ ' + (e.message || 'Erro.');
+
+    alerta.className =
+      'alerta erro show';
+
+    setLoading(btn, false, 'Enviar Link');
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+async function redirecionarPorRole(
+  userId,
+  roleOverride
+) {
+
+  let role = roleOverride;
+
+  if (!role) {
+
+    const { data } =
+      await sb
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+    role = data?.role;
+  }
+
+  if (
+    role === 'admin' ||
+    role === 'supervisor'
+  ) {
+
+    window.location.href = 'admin.html';
+
+  } else {
+
+    window.location.href = 'index.html';
   }
 }
-</script>
 
-</body>
-</html>
+function setLoading(
+  btn,
+  loading,
+  labelDefault
+) {
+
+  if (loading) {
+
+    btn.disabled = true;
+
+    btn.innerHTML =
+      '<div class="spin"></div><span>Aguarde...</span>';
+
+  } else {
+
+    btn.disabled = false;
+
+    btn.innerHTML =
+      '<span>' +
+      (labelDefault || 'Entrar') +
+      '</span>';
+  }
+}
+
+function mostrarAlerta(msg, tipo) {
+
+  const el =
+    document.getElementById('alerta');
+
+  el.textContent = msg;
+
+  el.className =
+    'alerta ' + tipo + ' show';
+}
+
+function esconderAlerta() {
+
+  document
+    .getElementById('alerta')
+    .classList.remove('show');
+}
+
+window.togglePw = function(id, btn) {
+
+  const inp =
+    document.getElementById(id);
+
+  const show =
+    inp.type === 'password';
+
+  inp.type =
+    show ? 'text' : 'password';
+};
+
+document
+  .getElementById('inp-email')
+  .addEventListener('keydown', e => {
+
+    if (e.key === 'Enter') {
+
+      document
+        .getElementById('inp-senha')
+        .focus();
+    }
+});
+</script>
