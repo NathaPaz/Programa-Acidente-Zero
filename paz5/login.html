@@ -251,13 +251,71 @@ body::before{
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
+// Verificar localStorage disponível
+try {
+  const test = '__test__';
+  localStorage.setItem(test, test);
+  localStorage.removeItem(test);
+} catch(e) {
+  console.warn('[PAZ5] localStorage indisponível:', e.message);
+  document.getElementById('storage-warning').style.display = 'block';
+}
+</script>
+
+<script>
+// Anti-loop: previne redirecionamentos em cascata
+window._redirects = window._redirects || [];
+window._lastRedirect = 0;
+
+function canRedirect(target) {
+  const now = Date.now();
+  const lastTime = window._lastRedirect || 0;
+  
+  // Só permite redirecionamento se passou 3+ segundos desde o último
+  if (now - lastTime < 3000) {
+    console.warn('[PAZ5] Redirecionamento em loop detectado! Bloqueando.');
+    return false;
+  }
+  
+  window._lastRedirect = now;
+  return true;
+}
+
+// Bloquear redirecionamento automático de login para login
+const originalReplace = window.location.replace;
+window.location.replace = function(url) {
+  console.log('[PAZ5] Tentativa de redirect para:', url);
+  
+  // Se estamos em /login.html e tentando ir para /login.html, bloqueia
+  if (window.location.pathname === '/login.html' && url.includes('login.html')) {
+    console.warn('[PAZ5] Bloqueado: loop login→login');
+    return;
+  }
+  
+  if (!canRedirect(url)) return;
+  originalReplace.call(window.location, url);
+};
+
+// Verificar localStorage
+try {
+  localStorage.setItem('__paz5_test__', '1');
+  localStorage.removeItem('__paz5_test__');
+  console.log('[PAZ5] localStorage OK');
+} catch(e) {
+  console.warn('[PAZ5] localStorage BLOQUEADO:', e.message);
+  // Usar sessionStorage como fallback
+  window._useSessionStorage = true;
+}
+</script>
+
+<script type="module">
+
 // ═══════════════════════════════════════════════════════════
 // CONFIGURAÇÃO SUPABASE
 // ⚠️ Substitua pelos valores reais do seu projeto
 // ═══════════════════════════════════════════════════════════
-const { createClient } = supabase;
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
@@ -270,23 +328,35 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
   }
 });
 
-// ─── Inicialização assíncrona ──────────────────────────────
-(async function init() {
-  // Verificar se já está logado
-  const { data: { session: sessaoAtual } } = await sb.auth.getSession();
-  if (sessaoAtual) {
-    redirecionarPorRole(sessaoAtual.user.id);
-    return;
+// ─── Verificar se já está logado ──────────────────────────
+// Check de sessão com retry
+let sessaoAtual = null;
+let tentativas = 0;
+while (!sessaoAtual && tentativas < 3) {
+  const result = await sb.auth.getSession();
+  sessaoAtual = result.data?.session;
+  if (!sessaoAtual) {
+    console.log(`[PAZ5] Tentativa ${tentativas+1}/3: sessão não encontrada`);
+    tentativas++;
+    if (tentativas < 3) await new Promise(r => setTimeout(r, 500));
   }
+}
 
-  // Verificar hash de reset de senha
-  const hash = window.location.hash;
-  if (hash.includes('type=recovery') || hash.includes('access_token')) {
-    document.getElementById('form-login').classList.remove('active');
-    document.getElementById('form-nova-senha').classList.add('active');
-    mostrarAlerta('✓ Sessão recuperada. Defina uma nova senha abaixo.', 'ok');
-  }
-})();
+if (sessaoAtual) {
+  console.log('[PAZ5] Sessão encontrada, redirecionando por role...');
+  redirecionarPorRole(sessaoAtual.user.id);
+} else {
+  console.log('[PAZ5] Nenhuma sessão após retries, mantendo em login');
+}
+
+// ─── Verificar hash de reset de senha ─────────────────────
+const hash = window.location.hash;
+if (hash.includes('type=recovery') || hash.includes('access_token')) {
+  // Modo redefinição de senha
+  document.getElementById('form-login').classList.remove('active');
+  document.getElementById('form-nova-senha').classList.add('active');
+  mostrarAlerta('✓ Sessão recuperada. Defina uma nova senha abaixo.', 'ok');
+}
 
 // ═══════════════════════════════════════════════════════════
 // LOGIN
@@ -382,7 +452,7 @@ window.doNovaSenha = async function() {
     });
 
     mostrarAlerta('✓ Senha alterada com sucesso! Redirecionando...', 'ok');
-    setTimeout(() => window.location.href = ('index.html'), 2000);
+    setTimeout(() => window.location.replace('/index.html'), 2000);
   } catch (e) {
     mostrarAlerta('⚠ ' + (e.message || 'Erro ao alterar senha.'), 'erro');
     setLoading(btn, false);
@@ -441,9 +511,9 @@ async function redirecionarPorRole(userId, roleOverride) {
     role = data?.role;
   }
   if (role === 'admin' || role === 'supervisor') {
-    window.location.href = ('admin.html');
+    window.location.replace('/admin.html');
   } else {
-    window.location.href = ('index.html');
+    window.location.replace('/index.html');
   }
 }
 
@@ -479,6 +549,55 @@ window.togglePw = function(id, btn) {
 document.getElementById('inp-email').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('inp-senha').focus();
 });
+</script>
+<script>
+if (window._useSessionStorage) {
+  document.getElementById('cloudflare-warning').style.display = 'block';
+  console.warn('[PAZ5] Aviso exibido: localStorage bloqueado');
+}
+
+// ════════════════════════════════════════════════════════
+// CLOUDFLARE FIX - melhorar persistência de sessão
+// ════════════════════════════════════════════════════════
+
+// Forçar cookies em vez de localStorage para melhor compatibilidade
+const cookieStorage = {
+  getItem: (key) => {
+    const name = key + "=";
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const cookieArray = decodedCookie.split(';');
+    for(let cookie of cookieArray) {
+      cookie = cookie.trim();
+      if (cookie.indexOf(name) === 0) return cookie.substring(name.length);
+    }
+    return null;
+  },
+  setItem: (key, value) => {
+    const d = new Date();
+    d.setTime(d.getTime() + (7*24*60*60*1000)); // 7 dias
+    const expires = "expires=" + d.toUTCString();
+    document.cookie = key + "=" + value + ";" + expires + ";path=/;SameSite=Lax";
+  },
+  removeItem: (key) => {
+    document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+  }
+};
+
+console.log('[PAZ5] Cloudflare mode: usando cookie storage');
+
+// Reconfigurar Supabase para usar cookie storage
+if (window.sb) {
+  window.sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: cookieStorage
+    }
+  });
+  console.log('[PAZ5] Supabase reconfigurado com cookieStorage');
+}
+
 </script>
 </body>
 </html>

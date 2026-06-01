@@ -408,13 +408,68 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// ════════════════════════════════════════════════════════
+// CLOUDFLARE - Anti-loop + Persistência de sessão
+// ════════════════════════════════════════════════════════
+
+window._redirects = window._redirects || [];
+window._lastRedirect = 0;
+
+function canRedirect(target) {
+  const now = Date.now();
+  const lastTime = window._lastRedirect || 0;
+  if (now - lastTime < 3000) {
+    console.warn('[PAZ5] Redirecionamento em loop bloqueado');
+    return false;
+  }
+  window._lastRedirect = now;
+  return true;
+}
+
+// Override window.location.replace para evitar loops
+const originalReplace = window.location.replace;
+window.location.replace = function(url) {
+  console.log('[PAZ5] Redirect para:', url);
+  if (!canRedirect(url)) return;
+  originalReplace.call(window.location, url);
+};
+
+// Cloudflare: usar cookie storage
+const cookieStorage = {
+  getItem: (key) => {
+    const name = key + "=";
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const cookieArray = decodedCookie.split(';');
+    for(let cookie of cookieArray) {
+      cookie = cookie.trim();
+      if (cookie.indexOf(name) === 0) return cookie.substring(name.length);
+    }
+    return null;
+  },
+  setItem: (key, value) => {
+    const d = new Date();
+    d.setTime(d.getTime() + (7*24*60*60*1000));
+    const expires = "expires=" + d.toUTCString();
+    document.cookie = key + "=" + value + ";" + expires + ";path=/;SameSite=Lax";
+  },
+  removeItem: (key) => {
+    document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+  }
+};
+
+console.log('[PAZ5] Cloudflare mode: cookie storage ativado');
+
 
 // ⚠️ Substitua pelos valores reais
 const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: { persistSession: true, autoRefreshToken: true }
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storage: cookieStorage
+  }
 });
 
 // ─── Estado ───────────────────────────────────────────────────

@@ -6,8 +6,8 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SUPABASE_URL  = 'SUPABASE_URL';
-const SUPABASE_ANON = 'SUPABASE_ANON';
+const SUPABASE_URL  = 'SEU_SUPABASE_URL';
+const SUPABASE_ANON = 'SUA_SUPABASE_ANON_KEY';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: {
