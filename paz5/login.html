@@ -378,9 +378,16 @@ function esconderAlerta() {
 
 if (sessaoAtual) {
   console.log('[PAZ5] Sessão encontrada');
-  } else {
-    console.log('[PAZ5] Nenhuma sessão após retries, mantendo em login');
-  }
+
+  const { data, error } = await sb
+    .from('profiles')
+    .select('id,nome,role,status')
+    .eq('id', sessaoAtual.user.id)
+    .single();
+
+  console.log('[PAZ5] Profile:', data);
+  console.log('[PAZ5] Error:', error);
+}
 })();
 
 // ─── Verificar hash de reset de senha ─────────────────────
