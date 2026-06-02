@@ -337,7 +337,30 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
     detectSessionInUrl: true
   }
 });
+function setLoading(btn, loading, labelDefault) {
+  if (loading) {
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spin"></div><span>Aguarde...</span>';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = '<span>' + (labelDefault || btn.dataset.label || 'Entrar') + '</span>';
+  }
+}
 
+function mostrarAlerta(msg, tipo) {
+  const el = document.getElementById('alerta');
+  if (!el) return;
+
+  el.textContent = msg;
+  el.className = 'alerta ' + tipo + ' show';
+}
+
+function esconderAlerta() {
+  const el = document.getElementById('alerta');
+  if (!el) return;
+
+  el.classList.remove('show');
+}
 // ─── Verificar se já está logado ──────────────────────────
 // Check de sessão com retry
 (async () => {
