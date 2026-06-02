@@ -372,7 +372,8 @@ if (hash.includes('type=recovery') || hash.includes('access_token')) {
 // ═══════════════════════════════════════════════════════════
 // LOGIN
 // ═══════════════════════════════════════════════════════════
-window.doLogin = async function() {
+console.log('esconderAlerta:', typeof esconderAlerta);
+  window.doLogin = async function() {
   const email = document.getElementById('inp-email').value.trim().toLowerCase();
   const senha  = document.getElementById('inp-senha').value;
   const btn    = document.getElementById('btn-login');
