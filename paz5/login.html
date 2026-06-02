@@ -353,9 +353,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
     }
   }
 
-  if (sessaoAtual) {
-    console.log('[PAZ5] Sessão encontrada, redirecionando por role...');
-    redirecionarPorRole(sessaoAtual.user.id);
+if (sessaoAtual) {
+  console.log('[PAZ5] Sessão encontrada');
   } else {
     console.log('[PAZ5] Nenhuma sessão após retries, mantendo em login');
   }
