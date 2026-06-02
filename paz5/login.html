@@ -385,8 +385,22 @@ if (sessaoAtual) {
     .eq('id', sessaoAtual.user.id)
     .single();
 
-  console.log('[PAZ5] Profile:', data);
-  console.log('[PAZ5] Error:', error);
+ const { data, error } = await sb
+  .from('profiles')
+  .select('id,nome,role,status')
+  .eq('id', sessaoAtual.user.id)
+  .single();
+
+console.log('[PAZ5] ID:', data?.id);
+console.log('[PAZ5] ROLE:', data?.role);
+console.log('[PAZ5] STATUS:', data?.status);
+console.log('[PAZ5] NOME:', data?.nome);
+console.log('[PAZ5] Error:', error);
+
+if (data?.role === 'admin' || data?.role === 'supervisor') {
+  console.log('[PAZ5] Destino: admin.html');
+} else {
+  console.log('[PAZ5] Destino: index.html');
 }
 })();
 
