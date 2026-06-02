@@ -1786,7 +1786,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
 // Proteção de rota — redireciona se não autenticado
 const { data: { session } } = await sb.auth.getSession();
 if (!session) {
-  window.location.replace('/login.html');
+  redirectWithLog('/login.html');
   throw new Error('Não autenticado');
 }
 
@@ -1798,7 +1798,7 @@ const { data: perfil } = await sb
 
 if (!perfil || perfil.status !== 'ativo') {
   await sb.auth.signOut();
-  window.location.replace('/login.html');
+  redirectWithLog('/login.html');
   throw new Error('Conta inativa ou bloqueada');
 }
 
@@ -2150,7 +2150,7 @@ window.doLogout = async function() {
   if (!confirm('Deseja encerrar a sessão?')) return;
   try { await sb.from('logs').insert({acao:'LOGOUT',descricao:'Analista encerrou sessão'}); } catch(_){}
   await sb.auth.signOut();
-  window.location.replace('/login.html');
+  redirectWithLog('/login.html');
 };
 
 // Troca de senha
