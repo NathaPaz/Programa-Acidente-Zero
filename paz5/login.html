@@ -378,23 +378,16 @@ function esconderAlerta() {
 
 if (sessaoAtual) {
   console.log('[PAZ5] Sessão encontrada');
-
-  const { data, error } = await sb
-    .from('profiles')
-    .select('id,nome,role,status')
-    .eq('id', sessaoAtual.user.id)
-    .single();
-
- const { data, error } = await sb
+const { data: profileData, error } = await sb
   .from('profiles')
   .select('id,nome,role,status')
   .eq('id', sessaoAtual.user.id)
   .single();
 
-console.log('[PAZ5] ID:', data?.id);
-console.log('[PAZ5] ROLE:', data?.role);
-console.log('[PAZ5] STATUS:', data?.status);
-console.log('[PAZ5] NOME:', data?.nome);
+console.log('[PAZ5] ID:', profileData?.id);
+console.log('[PAZ5] ROLE:', profileData?.role);
+console.log('[PAZ5] STATUS:', profileData?.status);
+console.log('[PAZ5] NOME:', profileData?.nome);
 console.log('[PAZ5] Error:', error);
 
 if (data?.role === 'admin' || data?.role === 'supervisor') {
