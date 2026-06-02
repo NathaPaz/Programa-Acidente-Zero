@@ -930,6 +930,7 @@ function procFile(file,tipo){
 
 async function procMensal(data,fname){
   // Sincronizar arrays globais com window (definidos pelo módulo Supabase)
+  
   if(window.mots)mots=window.mots;
   if(window.oris)oris=window.oris;
   if(window.tents)tents=window.tents;
@@ -1734,12 +1735,15 @@ function canRedirect(target) {
 }
 
 // Override window.location.replace para evitar loops
-const originalReplace = window.location.replace;
-window.location.replace = function(url) {
+function redirectWithLog(url) {
   console.log('[PAZ5] Redirect para:', url);
-  if (!canRedirect(url)) return;
-  originalReplace.call(window.location, url);
-};
+
+  if (!canRedirect(url)) {
+    return;
+  }
+    
+  window.location.replace(url);
+}
 
 // Cloudflare: usar cookie storage
 const cookieStorage = {
