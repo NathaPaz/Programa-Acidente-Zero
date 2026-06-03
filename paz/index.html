@@ -795,6 +795,17 @@ window.canRedirect = function(target) {
   return true;
 };
 
+const originalReplace = window.location.replace;
+window.location.replace = function(url) {
+  console.log('[PAZ5] Redirect:', url);
+  if (window.location.pathname === '/login.html' && url.includes('login.html')) {
+    console.warn('[PAZ5] Bloqueado: loop login→login');
+    return;
+  }
+  if (!window.canRedirect(url)) return;
+  originalReplace.call(window.location, url);
+};
+
 // Cookie storage (Cloudflare)
 window.cookieStorage = {
   getItem: (key) => {
@@ -1796,56 +1807,12 @@ function _initApp(){
 
 </script>
 
+
+
+
 <script type="module">
-// ════════════════════════════════════════════════════════
-// SUPABASE AUTH + PROTEÇÃO DE ROTA
-// ════════════════════════════════════════════════════════
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-// ════════════════════════════════════════════════════════
-// CLOUDFLARE - Anti-loop + Persistência de sessão
-// ════════════════════════════════════════════════════════
 
-window._redirects = window._redirects || [];
-window._lastRedirect = 0;
-
-function canRedirect(target) {
-  const now = Date.now();
-  const lastTime = window._lastRedirect || 0;
-  if (now - lastTime < 3000) {
-    console.warn('[PAZ5] Redirecionamento em loop bloqueado');
-    return false;
-  }
-  window._lastRedirect = now;
-  return true;
-}
-
-// Cloudflare: usar cookie storage
-const cookieStorage = {
-  getItem: (key) => {
-    const name = key + "=";
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const cookieArray = decodedCookie.split(';');
-    for(let cookie of cookieArray) {
-      cookie = cookie.trim();
-      if (cookie.indexOf(name) === 0) return cookie.substring(name.length);
-    }
-    return null;
-  },
-  setItem: (key, value) => {
-    const d = new Date();
-    d.setTime(d.getTime() + (7*24*60*60*1000));
-    const expires = "expires=" + d.toUTCString();
-    document.cookie = key + "=" + value + ";" + expires + ";path=/;SameSite=Lax";
-  },
-  removeItem: (key) => {
-    document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
-  }
-};
-
-console.log('[PAZ5] Cloudflare mode: cookie storage ativado');
-
-
-// ⚠️ Substitua pelos valores reais do seu projeto Supabase
 const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
 
@@ -1853,412 +1820,39 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    storage: cookieStorage
+    detectSessionInUrl: true,
+    storage: window.cookieStorage
   }
 });
 
-// Proteção de rota — redireciona se não autenticado
-const { data: { session } } = await sb.auth.getSession();
-if (!session) {
-  window.location.replace('/login.html');
-  throw new Error('Não autenticado');
-}
+// Expor globalmente
+window.sb = sb;
 
-const { data: perfil } = await sb
-  .from('profiles')
-  .select('id, nome, role, status')
-  .eq('id', session.user.id)
-  .single();
-
-if (!perfil || perfil.status !== 'ativo') {
-  await sb.auth.signOut();
-  window.location.replace('/login.html');
-  throw new Error('Conta inativa ou bloqueada');
-}
-
-// Expor sb e analista globalmente para o script principal
-window.sb          = sb;
-window.analAtual   = perfil.nome;
-window.analAtualId = session.user.id;
-
-// Atualizar header
-document.getElementById('user-nome-hdr').textContent  = perfil.nome;
-document.getElementById('user-role-badge').textContent =
-  perfil.role === 'admin' ? '★ ADM' : perfil.role === 'supervisor' ? '◆ SUP' : '';
-
-// Mostrar botão Admin para admin/supervisor
-if (['admin','supervisor'].includes(perfil.role)) {
-  document.getElementById('nav-auditoria').style.display = 'flex';
-}
-
-// ════════════════════════════════════════════════════════
-// BANCO DE DADOS (substitui armazenamento local — agora via Supabase)
-// ════════════════════════════════════════════════════════
-
-async function carregarState() {
-  const [resMots, resOris, resTents] = await Promise.all([
-    sb.from('motoristas').select('*').order('indice_wf', { ascending: false }),
-    sb.from('orientacoes').select('*').eq('tipo_registro', 'orientacao').order('data_contato', { ascending: false }),
-    sb.from('orientacoes').select('*').eq('tipo_registro', 'tentativa').order('data_contato', { ascending: false })
-  ]);
-
-  window.mots = (resMots.data || []).map(m => ({
-    id: m.id, _dbId: m.id,
-    mes: m.mes_ano, cliente: m.cliente, nome: m.nome,
-    cpf: m.cpf, contato: m.contato, tipo: m.tipo,
-    viagens: m.viagens, wf: m.wf, wfMes: m.wf_mes,
-    indice: m.indice_wf, status: m.status
-  }));
-
-  window.oris = {};
-  (resOris.data || []).forEach(o => {
-    if (!o.motorista_id) return;
-    if (!window.oris[o.motorista_id]) window.oris[o.motorista_id] = [];
-    window.oris[o.motorista_id].push({
-      _dbId: o.id, tsKey: o.id,
-      mes: mesAnoStr(o.data_contato) || '',
-      motivo: o.motivo, data: o.data_contato, hora: o.hora_contato || '',
-      nota: o.nota, descricao: o.descricao, analista: perfil.nome
-    });
-  });
-
-  window.tents = {};
-  (resTents.data || []).forEach(t => {
-    if (!t.motorista_id) return;
-    if (!window.tents[t.motorista_id]) window.tents[t.motorista_id] = [];
-    window.tents[t.motorista_id].push({
-      uid: t.id, _dbId: t.id,
-      mes: mesAnoStr(t.data_contato) || '',
-      motivo: t.motivo, data: t.data_contato, hora: t.hora_contato || '',
-      descricao: t.descricao, lembDt: t.lembrete_dt || '',
-      lembHr: t.lembrete_hr || '', analista: perfil.nome
-    });
-  });
-
-  document.getElementById('h-sync').textContent =
-    '🗄️ ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-}
-
-// Salvar orientação ou tentativa no banco
-window.salvarOri = async function() {
-  const mot    = document.getElementById('f-mot').value;
-  const dt     = document.getElementById('f-dt').value;
-  const hr     = document.getElementById('f-hr').value;
-  const desc   = document.getElementById('f-desc').value.trim();
-  const lembDt = document.getElementById('f-lemb-dt').value;
-  const lembHr = document.getElementById('f-lemb-hr').value;
-
-  if (!mot)  { alert('⚠ Selecione o motivo.'); return; }
-  if (!dt)   { alert('⚠ Informe a data.'); return; }
-  const tent = TENT_MOTIVOS.includes(mot);
-  // Ler nota diretamente do DOM (mais confiável que variável entre scripts)
-  const notaEl = document.querySelector('#ov-ori .nopt.sel');
-  const notaVal = notaEl ? notaEl.dataset.n : (window.notaSel || '');
-  if (!tent && !notaVal) { alert('⚠ Selecione uma nota: A, B ou C.'); return; }
-
-  const m   = window.motAtual;
-  const mes = mesAnoStr(dt) || m.mes || 'Atual';
-  const tipo = tent ? 'tentativa' : 'orientacao';
-
-  try {
-    const { data: reg, error } = await sb.from('orientacoes').insert({
-      user_id:        window.analAtualId,
-      motorista_id:   m._dbId || m.id,
-      motorista_nome: m.nome,
-      motorista_cpf:  m.cpf  || '',
-      cliente:        m.cliente || '',
-      motivo:         mot,
-      nota:           tipo === 'orientacao' ? notaVal : null,
-      descricao:      desc,
-      data_contato:   dt,
-      hora_contato:   hr  || null,
-      lembrete_dt:    lembDt || null,
-      lembrete_hr:    lembHr || null,
-      tipo_registro:  tipo
-    }).select().single();
-    if (error) throw error;
-
-    await sb.from('motoristas')
-      .update({ status: tipo === 'orientacao' ? 'orientado' : 'tentativa' })
-      .eq('id', m._dbId || m.id);
-
-    const motId = m._dbId || m.id;
-    if (tent) {
-      if (!window.tents[motId]) window.tents[motId] = [];
-      window.tents[motId].push({
-        uid: reg.id, _dbId: reg.id, mes, motivo: mot,
-        data: dt, hora: hr, descricao: desc, lembDt, lembHr, analista: window.analAtual
-      });
-      if (mot === 'Ligar depois' && lembDt) agendarLembrete(m, lembDt, lembHr);
-      else showToast('📵 Tentativa registrada — ' + m.nome.split(' ')[0]);
-    } else {
-      if (!window.oris[motId]) window.oris[motId] = [];
-      window.oris[motId].push({
-        _dbId: reg.id, tsKey: reg.id, mes, motivo: mot,
-        data: dt, hora: hr, nota: notaVal,
-        descricao: desc, analista: window.analAtual
-      });
-      showToast('✓ Orientação de ' + m.nome.split(' ')[0] + ' salva!');
+// NÃO fazer redirecionamento automático - deixar o usuário usar a página
+// Se não tiver sessão, as operações Supabase vão falhar naturalmente
+(async () => {
+  const result = await sb.auth.getSession();
+  const sessao = result.data?.session;
+  
+  if (sessao) {
+    const { data: perfil } = await sb.from('profiles').select('id, nome, role, status').eq('id', sessao.user.id).single();
+    if (perfil) {
+      window.analAtual = perfil.nome;
+      window.currentUser = sessao.user;
+      window.currentProfile = perfil;
+      console.log('[PAZ5] Index: sessão OK, analista:', perfil.nome);
     }
-    closeModal(); filtrarMot(); updDash();
-  } catch(e) { alert('❌ Erro ao salvar: ' + e.message); }
-};
-
-// Excluir orientação por ID
-async function excluirOriId(motId, tsKey) {
-  const { error } = await sb.from('orientacoes').delete().eq('id', tsKey);
-  if (error) throw error;
-  const arr = window.oris[motId];
-  if (arr) {
-    const idx = arr.findIndex(o => o.tsKey === tsKey || o._dbId === tsKey);
-    if (idx !== -1) { arr.splice(idx, 1); if (!arr.length) delete window.oris[motId]; }
+  } else {
+    console.log('[PAZ5] Index: sem sessão, redirecionando em 2s...');
+    setTimeout(() => {
+      if (window.canRedirect('/login.html')) {
+        window.location.replace('/login.html');
+      }
+    }, 2000);
   }
-}
-
-window.retornarOriId = async function(motId, tsKey) {
-  try {
-    await excluirOriId(motId, tsKey);
-    const restantes = (window.oris[motId]||[]).length + (window.tents[motId]||[]).length;
-    if (!restantes) {
-      await sb.from('motoristas').update({ status: 'pendente' }).eq('id', motId);
-      const m = window.mots.find(x => x.id === motId);
-      if (m) m.status = 'pendente';
-    }
-    filtrarMot(); renderOriClientes(); filtrarTodos();
-    showToast('↩ Motorista devolvido à lista de orientar');
-  } catch(e) { showToast('❌ Erro: ' + e.message); }
-};
-
-window.apagarOriId = async function(motId, tsKey) {
-  try {
-    await excluirOriId(motId, tsKey);
-    filtrarTodos();
-    showToast('🗑 Orientação removida');
-  } catch(e) { showToast('❌ Erro: ' + e.message); }
-};
-
-window.excluirMotorista = async function(motId) {
-  try {
-    await sb.from('orientacoes').delete().eq('motorista_id', motId);
-    await sb.from('motoristas').delete().eq('id', motId);
-    window.mots = window.mots.filter(m => m.id !== motId);
-    delete window.oris[motId]; delete window.tents[motId];
-    filtrarMot(); renderOriClientes(); updDash();
-    showToast('🗑 Motorista removido');
-  } catch(e) { showToast('❌ Erro: ' + e.message); }
-};
-
-window.limparTudo = async function() {
-  try {
-    await sb.from('motoristas').delete().eq('user_id', window.analAtualId);
-    window.mots=[]; window.oris={}; window.tents={};
-    window.oriCliSel=null; window.regCliSel=null;
-    window.tentCliSel=null; window.histCliSel=null;
-    window.todosCache=[];
-    document.getElementById('cbox').classList.remove('open');
-    updDash(); renderOriClientes(); filtrarMot();
-    showToast('✓ Dados removidos');
-  } catch(e) { showToast('❌ Erro: ' + e.message); }
-};
-
-// Importar planilha mensal
-window._procMensalSupabase = async function(linhas, fname) {
-  let adicionados = 0;
-  const inserir = linhas.filter(l => l.nome).map(l => ({
-    user_id:   window.analAtualId,
-    mes_ano:   l.mes    || '',
-    cliente:   l.cliente || '',
-    nome:      l.nome.trim(),
-    cpf:       l.cpf    || '',
-    contato:   l.contato || '',
-    tipo:      l.tipo   || '',
-    viagens:   parseFloat(l.viagens) || 0,
-    wf:        parseFloat(l.wf)      || 0,
-    wf_mes:    parseFloat(l.wfMes)   || 0,
-    indice_wf: parseFloat(l.indice)  || 0,
-    status:    'pendente'
-  }));
-  for (let i = 0; i < inserir.length; i += 200) {
-    const { error } = await sb.from('motoristas').insert(inserir.slice(i, i+200));
-    if (!error) adicionados += Math.min(200, inserir.length - i);
-  }
-  await carregarState();
-  atualizarTodosFiltrosMes();
-  setSt(`✓ ${adicionados} motoristas importados — ${fname}`);
-  renderOriClientes(); filtrarMot(); updDash();
-  showToast(`✓ Importado! ${adicionados} motoristas.`);
-};
-
-// Importar orientações preenchidas
-window._impOrientSupabase = async function(registros, fname) {
-  const inserir = registros.filter(r => r.motorista_nome && r.motivo).map(r => ({
-    user_id:        window.analAtualId,
-    motorista_id:   null,
-    motorista_nome: r.motorista_nome || '',
-    motorista_cpf:  r.cpf  || '',
-    cliente:        r.cliente || '',
-    motivo:         r.motivo || '',
-    nota:           ['A','B','C'].includes(r.nota) ? r.nota : null,
-    descricao:      r.descricao || '',
-    data_contato:   r.data || new Date().toISOString().split('T')[0],
-    hora_contato:   r.hora || null,
-    tipo_registro:  TENT_MOTIVOS.includes(r.motivo) ? 'tentativa' : 'orientacao'
-  }));
-  let count = 0;
-  for (let i = 0; i < inserir.length; i += 200) {
-    const { error } = await sb.from('orientacoes').insert(inserir.slice(i, i+200));
-    if (!error) count += Math.min(200, inserir.length - i);
-  }
-  await carregarState();
-  atualizarTodosFiltrosMes();
-  setSt(`✓ ${count} registros importados — ${fname}`, 'var(--ci)');
-  filtrarTodos(); updDash();
-  showToast(`✓ ${count} orientações importadas!`);
-};
-
-// Editar campo do motorista
-// Exportar para o script principal chamar
-window.editCampoSb = window.editCampo;
-window.editCampo = async function(inp) {
-  if (!window.motAtual) return;
-  const campo = inp.dataset.campo;
-  const valor = inp.value.trim();
-  if (!campo || !valor) return;
-  window.motAtual[campo] = valor;
-  const mapa = { cpf:'cpf', contato:'contato', tipo:'tipo' };
-  if (mapa[campo]) {
-    await sb.from('motoristas')
-      .update({ [mapa[campo]]: valor })
-      .eq('id', window.motAtual._dbId || window.motAtual.id);
-  }
-  filtrarMot();
-  showToast('✓ ' + campo + ' atualizado!');
-};
-
-// Editar/converter tentativa
-window.salvarEdicaoTent = async function() {
-  const mot    = document.getElementById('te-mot').value;
-  const dt     = document.getElementById('te-dt').value;
-  const hr     = document.getElementById('te-hr').value;
-  const desc   = document.getElementById('te-desc').value.trim();
-  const lembDt = document.getElementById('te-lemb-dt').value;
-  const lembHr = document.getElementById('te-lemb-hr').value;
-
-  if (!window.editTentId || !window.editTentUid) return;
-  const arr = window.tents[window.editTentId] || [];
-  const idx = arr.findIndex(x => x.uid === window.editTentUid || x._dbId === window.editTentUid);
-  if (idx === -1) return;
-  const t = arr[idx];
-  const mes = mesAnoStr(dt) || t.mes || 'Atual';
-
-  try {
-    if (!TENT_MOTIVOS.includes(mot)) {
-      const notaTeEl = document.querySelector('#ov-tent .nopt.sel');
-    const notaTeVal = notaTeEl ? notaTeEl.dataset.n : (window.notaTeSel || '');
-    if (!notaTeVal) { alert('⚠ Selecione uma nota para converter.'); return; }
-      await sb.from('orientacoes').update({
-        tipo_registro:'orientacao', motivo:mot, nota:notaTeVal,
-        data_contato:dt, hora_contato:hr||null, descricao:desc
-      }).eq('id', t._dbId || t.uid);
-      if (!window.oris[window.editTentId]) window.oris[window.editTentId] = [];
-      window.oris[window.editTentId].push({
-        _dbId:t._dbId, tsKey:t._dbId, mes, motivo:mot,
-        data:dt, hora:hr, nota:notaTeVal, descricao:desc, analista:window.analAtual
-      });
-      arr.splice(idx,1); window.tents[window.editTentId]=arr;
-      await sb.from('motoristas').update({status:'orientado'}).eq('id',window.editTentId);
-      showToast('✓ Convertido para orientação efetiva!');
-    } else {
-      await sb.from('orientacoes').update({
-        motivo:mot, data_contato:dt, hora_contato:hr||null,
-        descricao:desc, lembrete_dt:lembDt||null, lembrete_hr:lembHr||null
-      }).eq('id', t._dbId || t.uid);
-      arr[idx] = {...arr[idx], motivo:mot, data:dt, hora:hr, descricao:desc, lembDt, lembHr, mes};
-      window.tents[window.editTentId]=arr;
-      if (mot==='Ligar depois' && lembDt)
-        agendarLembrete(window.mots.find(x=>x.id===window.editTentId), lembDt, lembHr);
-      else showToast('✓ Tentativa atualizada!');
-    }
-    closeTentModal(); filtrarTent(); renderTentClientes(); updDash(); filtrarMot();
-  } catch(e) { alert('❌ Erro: ' + e.message); }
-};
-
-// Exportar CSV
-window.exportarCSV = async function() {
-  const fm = document.getElementById('reg-mes')?.value || '';
-  let query = sb.from('orientacoes')
-    .select('*, motoristas(nome,cpf,cliente,tipo,contato,indice_wf)')
-    .eq('tipo_registro','orientacao')
-    .order('data_contato',{ascending:false});
-  if (fm) {
-    const mns={Jan:'01',Fev:'02',Mar:'03',Abr:'04',Mai:'05',Jun:'06',Jul:'07',Ago:'08',Set:'09',Out:'10',Nov:'11',Dez:'12'};
-    const [mn,yyyy]=fm.split('/');
-    const mm=mns[mn]||'01';
-    query=query.gte('data_contato',`${yyyy}-${mm}-01`).lte('data_contato',`${yyyy}-${mm}-31`);
-  }
-  const { data } = await query;
-  if (!data?.length) { showToast('⚠ Nenhum registro.'); return; }
-  const cols=['Analista','Cliente','Motorista','Tipo','CPF','Contato','Motivo','Data','Hora','Nota','Descrição'];
-  const rows=data.map(r=>[
-    perfil.nome,
-    r.cliente||r.motoristas?.cliente||'',
-    r.motorista_nome,
-    r.motoristas?.tipo||'',
-    r.motorista_cpf||r.motoristas?.cpf||'',
-    r.motoristas?.contato||'',
-    r.motivo||'',
-    fmtData(r.data_contato),
-    r.hora_contato||'',
-    r.nota||'',
-    r.descricao||''
-  ]);
-  const csv=[cols,...rows].map(r=>r.map(v=>'"'+(v||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
-  a.download='PAZ5_orientacoes.csv'; a.click(); URL.revokeObjectURL(a.href);
-  showToast('📥 CSV Exportado!');
-};
-
-// Logout
-window.doLogout = async function() {
-  if (!confirm('Deseja encerrar a sessão?')) return;
-  try { await sb.from('logs').insert({acao:'LOGOUT',descricao:'Analista encerrou sessão'}); } catch(_){}
-  await sb.auth.signOut();
-  window.location.replace('/login.html');
-};
-
-// Troca de senha
-window.trocarSenha = async function(novaSenha, confirmSenha) {
-  if (novaSenha !== confirmSenha) { showToast('⚠ As senhas não coincidem'); return; }
-  if (novaSenha.length < 8) { showToast('⚠ Mín. 8 caracteres'); return; }
-  try {
-    const { error } = await sb.auth.updateUser({ password: novaSenha });
-    if (error) throw error;
-    await sb.from('logs').insert({acao:'CHANGE_PASSWORD',descricao:'Analista alterou a própria senha'});
-    showToast('✓ Senha alterada com sucesso!');
-  } catch(e) { showToast('❌ ' + e.message); }
-};
-
-// Realtime — sincronização automática
-sb.channel('paz5-sync')
-  .on('postgres_changes', {
-    event: '*', schema: 'public', table: 'orientacoes',
-    filter: `user_id=eq.${session.user.id}`
-  }, async () => {
-    await carregarState();
-    atualizarTodosFiltrosMes(); updDash();
-    document.getElementById('h-sync').textContent =
-      '🔄 ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  })
-  .subscribe();
-
-// ════════════════════════════════════════════════════════
-// INICIALIZAR
-// ════════════════════════════════════════════════════════
-await carregarState();
-try { await sb.rpc('update_last_login', { uid: session.user.id }); } catch(_){}
-_initApp();
+})();
 
 </script>
+
 </body>
 </html>
