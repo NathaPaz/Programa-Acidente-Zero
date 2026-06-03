@@ -1883,13 +1883,21 @@ if (!session) {
   throw new Error('Não autenticado');
 }
 
-const { data: perfil } = await sb
+const { data: perfil, error: perfilError } = await sb
   .from('profiles')
   .select('id, nome, role, status')
   .eq('id', session.user.id)
   .single();
 
+console.log('[PAZ5] Perfil:', perfil);
+console.log('[PAZ5] Perfil Error:', perfilError);
+
+if (perfilError) {
+  console.error('[PAZ5] Erro ao buscar perfil:', perfilError);
+}
+
 if (!perfil || perfil.status !== 'ativo') {
+  console.log('[PAZ5] Redirecionando para login. Perfil:', perfil);
   await sb.auth.signOut();
   window.location.replace('/login.html');
   throw new Error('Conta inativa ou bloqueada');
