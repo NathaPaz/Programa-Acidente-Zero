@@ -393,13 +393,15 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
   if (sessaoAtual) {
     console.log('[PAZ5] Sessão encontrada, redirecionando...');
     const { data: perfil } = await sb.from('profiles').select('role').eq('id', sessaoAtual.user.id).single();
-    if (perfil?.role === 'admin' || perfil?.role === 'supervisor') {
-      if (canRedirect('/admin.html')) window.location.replace('/admin.html');
-    } else {
-      if (canRedirect('/index.html')) window.location.replace('/index.html');
-    }
-  }
-})();
+    console.log('[PAZ5] Perfil encontrado:', perfil);
+
+if (perfil?.role === 'admin' || perfil?.role === 'supervisor') {
+  console.log('[PAZ5] Redirecionando para admin.html');
+  window.location.href = '/admin.html';
+} else {
+  console.log('[PAZ5] Redirecionando para index.html');
+  window.location.href = '/index.html';
+}
 
 // Verificar hash de reset de senha
 const hash = window.location.hash;
@@ -456,7 +458,7 @@ window.doLogin = async function() {
     window.setLoading(btn, false);
   }
 };
-console.log('[PAZ5] doLogin criada:', typeof window.doLogin);
+
   
 // NOVA SENHA
 window.doNovaSenha = async function() {
@@ -526,7 +528,6 @@ document.getElementById('inp-email').addEventListener('keydown', e => {
 });
 
 console.log('[PAZ5] Login module carregado OK');
-  console.log('[PAZ5] Módulo finalizado');
 </script>
 </body>
 </html>
