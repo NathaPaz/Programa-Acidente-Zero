@@ -1810,6 +1810,10 @@ function _initApp(){
 
 
 
+
+
+
+
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -1817,41 +1821,33 @@ const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: window.cookieStorage
-  }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.cookieStorage }
 });
 
-// Expor globalmente
 window.sb = sb;
+console.log('[PAZ5] Index: Supabase pronto');
 
-// NÃO fazer redirecionamento automático - deixar o usuário usar a página
-// Se não tiver sessão, as operações Supabase vão falhar naturalmente
-(async () => {
-  const result = await sb.auth.getSession();
-  const sessao = result.data?.session;
-  
-  if (sessao) {
-    const { data: perfil } = await sb.from('profiles').select('id, nome, role, status').eq('id', sessao.user.id).single();
-    if (perfil) {
-      window.analAtual = perfil.nome;
-      window.currentUser = sessao.user;
-      window.currentProfile = perfil;
-      console.log('[PAZ5] Index: sessão OK, analista:', perfil.nome);
-    }
+// Apenas carregar dados se tiver sessão, sem redirecionar
+sb.auth.getSession().then(({ data }) => {
+  if (data?.session) {
+    sb.from('profiles').select('id, nome, role, status').eq('id', data.session.user.id).single()
+      .then(({ data: perfil }) => {
+        if (perfil) {
+          window.analAtual = perfil.nome;
+          window.currentUser = data.session.user;
+          window.currentProfile = perfil;
+          console.log('[PAZ5] Index: Analista carregado:', perfil.nome);
+          // Se tiver função de inicialização, chamar
+          if (window.init) window.init();
+        }
+      }).catch(e => console.error('[PAZ5] Erro ao carregar perfil:', e.message));
   } else {
-    console.log('[PAZ5] Index: sem sessão, redirecionando em 2s...');
+    console.log('[PAZ5] Index: sem sessão, redirecionando em 3s');
     setTimeout(() => {
-      if (window.canRedirect('/login.html')) {
-        window.location.replace('/login.html');
-      }
-    }, 2000);
+      if (window.canRedirect('/login.html')) window.location.replace('/login.html');
+    }, 3000);
   }
-})();
-
+}).catch(e => console.error('[PAZ5] Erro ao verificar sessão:', e.message));
 </script>
 
 </body>
