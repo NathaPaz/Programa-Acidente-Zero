@@ -571,8 +571,8 @@ console.log('[PAZ5] Cloudflare mode: cookie storage ativado');
 
 
 // ⚠️ Substitua pelos valores reais
-const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
+const SUPABASE_URL  = 'SEU_SUPABASE_URL';
+const SUPABASE_ANON = 'SUA_SUPABASE_ANON_KEY';
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: {
@@ -581,6 +581,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
     storage: cookieStorage
   }
 });
+window.sb = sb;
 
 // ─── Estado ───────────────────────────────────────────────────
 let currentUser = null, currentProfile = null;
@@ -588,18 +589,51 @@ let todosUsuarios = [], dashData = null;
 let analistaAtivoId = null;
 let charts = {};
 
-// ─── Proteção da página ───────────────────────────────────────
-const { data: { session } } = await sb.auth.getSession();
-if (!session) { window.location.replace('/login.html'); throw 0; }
-currentUser = session.user;
-
-const { data: perfil } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-if (!perfil || !['admin','supervisor'].includes(perfil.role)) {
-  await sb.auth.signOut();
-  window.location.replace('/login.html?erro=sem_permissao');
-  throw 0;
-}
-currentProfile = perfil;
+// ─── Proteção da página (com retry) ───────────────────────────
+(async () => {
+  let sessao = null;
+  let tentativas = 0;
+  
+  while (!sessao && tentativas < 3) {
+    const result = await sb.auth.getSession();
+    sessao = result.data?.session;
+    if (!sessao) {
+      console.log(`[PAZ5] Admin: tentativa ${tentativas+1}/3 sem sessão`);
+      tentativas++;
+      if (tentativas < 3) await new Promise(r => setTimeout(r, 300));
+    }
+  }
+  
+  if (!sessao) {
+    console.warn('[PAZ5] Admin: sem sessão, redirecionando...');
+    if (window.canRedirect) window.canRedirect('/login.html');
+    window.location.replace('/login.html');
+    return;
+  }
+  
+  window.currentUser = sessao.user;
+  
+  const { data: perfil } = await sb.from('profiles').select('*').eq('id', sessao.user.id).single();
+  if (!perfil || !['admin','supervisor'].includes(perfil.role)) {
+    console.error('[PAZ5] Admin: permissão negada');
+    await sb.auth.signOut();
+    if (window.canRedirect) window.canRedirect('/login.html');
+    window.location.replace('/login.html?erro=sem_permissao');
+    return;
+  }
+  
+  window.currentProfile = perfil;
+  console.log('[PAZ5] Admin: autenticação OK, role:', perfil.role);
+  
+  // Header
+  const ini = n => { const p=(n||'').trim().split(/\s+/).filter(Boolean); return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():(n||'??').substring(0,2).toUpperCase(); };
+  document.getElementById('hdr-av').textContent    = ini(perfil.nome);
+  document.getElementById('hdr-nome').textContent  = perfil.nome;
+  document.getElementById('hdr-role').textContent  = perfil.role;
+  
+  // Carregar dashboard inicial
+  setTimeout(() => carregarDashboard(), 100);
+})();
 
 // Header
 const ini = n => { const p=(n||'').trim().split(/\s+/).filter(Boolean); return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():(n||'??').substring(0,2).toUpperCase(); };
