@@ -519,6 +519,10 @@ window.doLogout = function() { console.log('[PAZ5] doLogout aguardando módulo')
 
 
 
+
+
+
+
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -526,50 +530,42 @@ const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: window.cookieStorage
-  }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.cookieStorage }
 });
 
 window.sb = sb;
+console.log('[PAZ5] Admin: Supabase pronto');
 
-(async () => {
-  const result = await sb.auth.getSession();
-  const sessao = result.data?.session;
-  
-  if (!sessao) {
-    console.warn('[PAZ5] Admin: sem sessão, redirecionando...');
+// Carregar dados se tiver sessão
+sb.auth.getSession().then(({ data }) => {
+  if (!data?.session) {
+    console.warn('[PAZ5] Admin: sem sessão, redirecionando em 2s');
     setTimeout(() => {
-      if (window.canRedirect('/login.html')) {
-        window.location.replace('/login.html');
+      if (window.canRedirect('/login.html')) window.location.replace('/login.html');
+    }, 2000);
+    return;
+  }
+  
+  sb.from('profiles').select('*').eq('id', data.session.user.id).single()
+    .then(({ data: perfil }) => {
+      if (!perfil || !['admin', 'supervisor'].includes(perfil.role)) {
+        console.error('[PAZ5] Admin: sem permissão');
+        sb.auth.signOut().then(() => {
+          if (window.canRedirect('/login.html')) window.location.replace('/login.html?erro=sem_permissao');
+        });
+        return;
       }
-    }, 1000);
-    return;
-  }
-  
-  const { data: perfil } = await sb.from('profiles').select('*').eq('id', sessao.user.id).single();
-  
-  if (!perfil || !['admin', 'supervisor'].includes(perfil.role)) {
-    console.error('[PAZ5] Admin: sem permissão');
-    await sb.auth.signOut();
-    if (window.canRedirect('/login.html')) {
-      window.location.replace('/login.html?erro=sem_permissao');
-    }
-    return;
-  }
-  
-  window.currentUser = sessao.user;
-  window.currentProfile = perfil;
-  
-  console.log('[PAZ5] Admin: autenticação OK, role:', perfil.role);
-  
-  // Carregar dashboard
-  setTimeout(() => { if (window.carregarDashboard) window.carregarDashboard(); }, 100);
-})();
-
+      
+      window.currentUser = data.session.user;
+      window.currentProfile = perfil;
+      console.log('[PAZ5] Admin: Autenticado como', perfil.role);
+      
+      // Carregar dashboard se função existir
+      if (window.carregarDashboard) {
+        setTimeout(() => window.carregarDashboard(), 100);
+      }
+    }).catch(e => console.error('[PAZ5] Erro ao carregar perfil:', e.message));
+}).catch(e => console.error('[PAZ5] Erro sessão:', e.message));
 </script>
 
 </body>
