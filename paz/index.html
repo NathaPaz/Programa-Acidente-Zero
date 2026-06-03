@@ -795,6 +795,17 @@ window.canRedirect = function(target) {
   return true;
 };
 
+const originalReplace = window.location.replace;
+window.location.replace = function(url) {
+  console.log('[PAZ5] Redirect:', url);
+  if (window.location.pathname === '/login.html' && url.includes('login.html')) {
+    console.warn('[PAZ5] Bloqueado: loop login→login');
+    return;
+  }
+  if (!window.canRedirect(url)) return;
+  originalReplace.call(window.location, url);
+};
+
 // Cookie storage (Cloudflare)
 window.cookieStorage = {
   getItem: (key) => {
@@ -1819,6 +1830,14 @@ function canRedirect(target) {
   return true;
 }
 
+// Override window.location.replace para evitar loops
+const originalReplace = window.location.replace;
+window.location.replace = function(url) {
+  console.log('[PAZ5] Redirect para:', url);
+  if (!canRedirect(url)) return;
+  originalReplace.call(window.location, url);
+};
+
 // Cloudflare: usar cookie storage
 const cookieStorage = {
   getItem: (key) => {
@@ -1856,33 +1875,53 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
     storage: cookieStorage
   }
 });
+window.sb = sb;
 
-// Proteção de rota — redireciona se não autenticado
-const { data: { session } } = await sb.auth.getSession();
-if (!session) {
-  window.location.replace('/login.html');
-  throw new Error('Não autenticado');
-}
-
-const { data: perfil, error: perfilError } = await sb
-  .from('profiles')
-  .select('id, nome, role, status')
-  .eq('id', session.user.id)
-  .single();
-
-console.log('[PAZ5] Perfil:', perfil);
-console.log('[PAZ5] Perfil Error:', perfilError);
-
-if (perfilError) {
-  console.error('[PAZ5] Erro ao buscar perfil:', perfilError);
-}
-
-if (!perfil || perfil.status !== 'ativo') {
-  console.log('[PAZ5] Redirecionando para login. Perfil:', perfil);
-  await sb.auth.signOut();
-  window.location.replace('/login.html');
-  throw new Error('Conta inativa ou bloqueada');
-}
+// Proteção de rota — verifica autenticação com retry
+(async () => {
+  let sessao = null;
+  let tentativas = 0;
+  
+  while (!sessao && tentativas < 3) {
+    const result = await sb.auth.getSession();
+    sessao = result.data?.session;
+    if (!sessao) {
+      console.log(`[PAZ5] Index: tentativa ${tentativas+1}/3 sem sessão`);
+      tentativas++;
+      if (tentativas < 3) await new Promise(r => setTimeout(r, 300));
+    }
+  }
+  
+  if (!sessao) {
+    console.warn('[PAZ5] Index: sem sessão após retries, redirecionando...');
+    if (canRedirect('/login.html')) window.location.replace('/login.html');
+    return;
+  }
+  
+  // Verificar perfil do usuário
+  const { data: perfil } = await sb
+    .from('profiles')
+    .select('id, nome, role, status')
+    .eq('id', sessao.user.id)
+    .single();
+  
+  if (!perfil) {
+    console.error('[PAZ5] Index: perfil não encontrado');
+    await sb.auth.signOut();
+    if (canRedirect('/login.html')) window.location.replace('/login.html');
+    return;
+  }
+  
+  if (perfil.status === 'bloqueado' || perfil.status === 'inativo') {
+    console.warn('[PAZ5] Index: conta inativa/bloqueada');
+    await sb.auth.signOut();
+    if (canRedirect('/login.html')) window.location.replace('/login.html');
+    return;
+  }
+  
+  console.log('[PAZ5] Index: autenticação OK');
+  window.analAtual = perfil.nome;
+})();
 
 // Expor sb e analista globalmente para o script principal
 window.sb          = sb;
