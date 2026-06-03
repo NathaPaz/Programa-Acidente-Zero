@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAZ 5.0 — Acesso</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ap:#0A3D6B;--am:#0D5499;--av:#0077C8;--ci:#00B4CC;--vl:#A8CC00;--vl2:#C8E000;
+  --na-b:#1D9E75;--na-t:#0A5C3F;--na-bg:#E8F7F0;
+  --nc-b:#C0392B;--nc-t:#7A1A14;--nc-bg:#FDEAEA;
+  --brd:rgba(0,119,200,0.15);--bg:#F0F4F8;--tx:#0A2540;--txs:#4A6785;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Barlow',sans-serif;}
+body{
+  background:linear-gradient(135deg,#03111F 0%,var(--ap) 45%,#0D6BB5 100%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:20px;position:relative;overflow:hidden;
+}
+body::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 70% 20%,rgba(0,180,204,.12) 0%,transparent 60%),
+             radial-gradient(ellipse 60% 40% at 20% 80%,rgba(168,204,0,.08) 0%,transparent 60%);
+  pointer-events:none;
+}
+.grid-bg{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;
+}
+.card{
+  background:#fff;border-radius:20px;padding:40px 36px 32px;
+  width:100%;max-width:400px;position:relative;z-index:1;
+  box-shadow:0 32px 80px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.08);
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--av),var(--ci),var(--vl));
+  border-radius:20px 20px 0 0;
+}
+.logo{text-align:center;margin-bottom:32px;}
+.logo-ring{
+  width:64px;height:64px;border-radius:16px;
+  background:linear-gradient(135deg,var(--av),var(--ap));
+  display:inline-flex;align-items:center;justify-content:center;
+  margin-bottom:14px;position:relative;
+  box-shadow:0 8px 24px rgba(0,119,200,.35);
+}
+.logo-ring svg{color:#fff;}
+.logo-name{
+  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;
+  color:var(--ap);line-height:1;
+}
+.logo-name em{color:var(--av);font-style:normal;}
+.logo-sub{font-size:11px;color:#8899AA;font-weight:600;letter-spacing:.5px;margin-top:4px;}
+.form-section{display:none;}
+.form-section.active{display:block;}
+.flbl{
+  display:block;font-size:9px;font-weight:800;color:var(--av);
+  text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px;
+}
+.fi{
+  width:100%;padding:12px 14px;border-radius:9px;border:1.5px solid #DDE5EF;
+  background:var(--bg);font-family:'Barlow',sans-serif;font-size:13px;
+  outline:none;color:var(--tx);transition:all .17s;margin-bottom:14px;
+}
+.fi:focus{border-color:var(--av);background:#fff;box-shadow:0 0 0 3px rgba(0,119,200,.09);}
+.fi::placeholder{color:#B0BFCE;}
+.pw-wrap{position:relative;margin-bottom:14px;}
+.pw-wrap .fi{margin-bottom:0;padding-right:44px;}
+.pw-eye{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:#8899AA;padding:4px;
+}
+.pw-eye:hover{color:var(--av);}
+.btn{
+  width:100%;padding:13px;background:linear-gradient(135deg,var(--av),var(--ap));
+  color:#fff;border:none;border-radius:10px;font-family:'Barlow',sans-serif;
+  font-size:14px;font-weight:800;cursor:pointer;transition:all .18s;
+  box-shadow:0 4px 16px rgba(0,119,200,.3);margin-top:6px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,119,200,.38);}
+.btn:disabled{opacity:.65;cursor:not-allowed;transform:none;box-shadow:none;}
+.alerta{
+  border-radius:9px;padding:10px 13px;font-size:12px;font-weight:600;
+  margin-bottom:16px;display:none;line-height:1.5;
+}
+.alerta.erro{background:var(--nc-bg);border:1.5px solid var(--nc-b);color:var(--nc-t);}
+.alerta.ok{background:var(--na-bg);border:1.5px solid var(--na-b);color:var(--na-t);}
+.alerta.show{display:block;}
+.link-row{text-align:center;margin-top:16px;}
+.link-row a{
+  font-size:11px;color:var(--av);font-weight:700;cursor:pointer;
+  text-decoration:none;transition:opacity .15s;
+}
+.link-row a:hover{text-decoration:underline;}
+.spin{
+  width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:gira .7s linear infinite;
+}
+@keyframes gira{to{transform:rotate(360deg);}}
+.recovery-overlay{
+  display:none;position:fixed;inset:0;background:rgba(10,61,107,.6);
+  backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;
+  padding:20px;
+}
+.recovery-overlay.open{display:flex;}
+.recovery-card{
+  background:#fff;border-radius:16px;padding:28px;max-width:360px;width:100%;
+  box-shadow:0 24px 60px rgba(0,0,0,.3);
+}
+.recovery-card h3{
+  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;
+  color:var(--ap);margin-bottom:4px;
+}
+.recovery-card p{font-size:12px;color:var(--txs);margin-bottom:18px;line-height:1.6;}
+.rec-btns{display:flex;gap:8px;margin-top:8px;}
+.btn-cancel{
+  flex:1;padding:11px;background:transparent;border:1.5px solid var(--brd);
+  border-radius:9px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;
+  color:var(--txs);cursor:pointer;transition:all .15s;
+}
+.btn-cancel:hover{border-color:var(--av);color:var(--av);}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-ring">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M12 2.5v19M2.5 12h19" stroke="currentColor" stroke-width="1.3" opacity=".4"/>
+        <path d="M5 5.5Q12 9.5 19 5.5M5 18.5Q12 14.5 19 18.5" stroke="currentColor" stroke-width="1.4" opacity=".8"/>
+      </svg>
+    </div>
+    <div class="logo-name">PAZ <em>5.0</em></div>
+    <div class="logo-sub">Programa Acidente Zero</div>
+  </div>
+
+  <div id="alerta" class="alerta erro"></div>
+
+  <!-- LOGIN -->
+  <div id="form-login" class="form-section active">
+    <label class="flbl" for="inp-email">E-mail</label>
+    <input class="fi" type="email" id="inp-email" placeholder="seu@email.com" autocomplete="email">
+
+    <label class="flbl" for="inp-senha">Senha</label>
+    <div class="pw-wrap">
+      <input class="fi" type="password" id="inp-senha" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="pw-eye" type="button" onclick="togglePw('inp-senha',this)" title="Mostrar/ocultar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+    <button class="btn" id="btn-login" onclick="doLogin()">
+      <span>Entrar</span>
+    </button>
+
+    <div class="link-row">
+      <a onclick="abrirRecuperacao()">Esqueci minha senha</a>
+    </div>
+  </div>
+
+  <!-- TROCA DE SENHA -->
+  <div id="form-nova-senha" class="form-section">
+    <div style="font-size:13px;color:var(--txs);margin-bottom:20px;line-height:1.6;">
+      Defina uma nova senha segura para sua conta.
+    </div>
+    <label class="flbl" for="inp-nova">Nova senha</label>
+    <div class="pw-wrap">
+      <input class="fi" type="password" id="inp-nova" placeholder="Mín. 8 caracteres">
+      <button class="pw-eye" type="button" onclick="togglePw('inp-nova',this)" title="Mostrar/ocultar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <label class="flbl" for="inp-nova2">Confirmar senha</label>
+    <div class="pw-wrap">
+      <input class="fi" type="password" id="inp-nova2" placeholder="Repita a senha"
+             onkeydown="if(event.key==='Enter')doNovaSenha()">
+      <button class="pw-eye" type="button" onclick="togglePw('inp-nova2',this)" title="Mostrar/ocultar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <button class="btn" id="btn-nova" onclick="doNovaSenha()">
+      <span>Salvar Nova Senha</span>
+    </button>
+  </div>
+</div>
+
+<!-- RECOVERY OVERLAY -->
+<div class="recovery-overlay" id="recovery-overlay">
+  <div class="recovery-card">
+    <h3>🔑 Recuperar Acesso</h3>
+    <p>Digite o e-mail da sua conta. Você receberá um link para redefinir a senha.</p>
+    <div id="alerta-rec" class="alerta erro" style="margin-bottom:14px"></div>
+    <label class="flbl" for="inp-rec-email">E-mail</label>
+    <input class="fi" id="inp-rec-email" type="email" placeholder="seu@email.com"
+           onkeydown="if(event.key==='Enter')doRecuperacao()">
+    <div class="rec-btns">
+      <button class="btn-cancel" onclick="fecharRecuperacao()">Cancelar</button>
+      <button class="btn" id="btn-rec" style="flex:1;margin-top:0" onclick="doRecuperacao()">
+        <span>Enviar Link</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// HELPER FUNCTIONS (escopo global)
+// ════════════════════════════════════════════════════════
+window.mostrarAlerta = function(msg, tipo) {
+  const el = document.getElementById('alerta');
+  el.textContent = msg;
+  el.className = 'alerta ' + (tipo || 'erro') + ' show';
+};
+
+window.esconderAlerta = function() {
+  const el = document.getElementById('alerta');
+  el.className = 'alerta erro';
+};
+
+window.setLoading = function(btn, loading, textLabel) {
+  if (loading) {
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spin"></div>';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = '<span>' + (textLabel || btn.textContent) + '</span>';
+  }
+};
+
+window.togglePw = function(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  btn.style.opacity = isPassword ? '.7' : '1';
+};
+
+window.abrirRecuperacao = function() {
+  document.getElementById('recovery-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('inp-rec-email').focus(), 100);
+};
+
+window.fecharRecuperacao = function() {
+  document.getElementById('recovery-overlay').classList.remove('open');
+  document.getElementById('alerta-rec').classList.remove('show');
+};
+
+// Anti-loop redirect
+window._redirects = window._redirects || [];
+window._lastRedirect = 0;
+
+function canRedirect(target) {
+  const now = Date.now();
+  const lastTime = window._lastRedirect || 0;
+  if (now - lastTime < 3000) {
+    console.warn('[PAZ5] Redirecionamento em loop detectado!');
+    return false;
+  }
+  window._lastRedirect = now;
+  return true;
+}
+
+const originalReplace = window.location.replace;
+window.location.replace = function(url) {
+  console.log('[PAZ5] Redirect:', url);
+  if (window.location.pathname === '/login.html' && url.includes('login.html')) {
+    console.warn('[PAZ5] Bloqueado: loop login→login');
+    return;
+  }
+  if (!canRedirect(url)) return;
+  originalReplace.call(window.location, url);
+};
+
+// Cookie storage (Cloudflare fix)
+window.cookieStorage = {
+  getItem: (key) => {
+    const name = key + "=";
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const cookieArray = decodedCookie.split(';');
+    for(let cookie of cookieArray) {
+      cookie = cookie.trim();
+      if (cookie.indexOf(name) === 0) return cookie.substring(name.length);
+    }
+    return null;
+  },
+  setItem: (key, value) => {
+    const d = new Date();
+    d.setTime(d.getTime() + (7*24*60*60*1000));
+    const expires = "expires=" + d.toUTCString();
+    document.cookie = key + "=" + value + ";" + expires + ";path=/;SameSite=Lax";
+  },
+  removeItem: (key) => {
+    document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+  }
+};
+
+console.log('[PAZ5] Login: helper functions e storage prontos');
+</script>
+
+
+<script>
+// ════════════════════════════════════════════════════════
+// ANTI-LOOP REDIRECT + CLOUDFLARE FIX
+// ════════════════════════════════════════════════════════
+
+window._redirects = window._redirects || [];
+window._lastRedirect = 0;
+
+window.canRedirect = function(target) {
+  const now = Date.now();
+  const lastTime = window._lastRedirect || 0;
+  if (now - lastTime < 3000) {
+    console.warn('[PAZ5] Redirecionamento em loop bloqueado');
+    return false;
+  }
+  window._lastRedirect = now;
+  return true;
+};
+
+const originalReplace = window.location.replace;
+window.location.replace = function(url) {
+  console.log('[PAZ5] Redirect:', url);
+  if (window.location.pathname === '/login.html' && url.includes('login.html')) {
+    console.warn('[PAZ5] Bloqueado: loop login→login');
+    return;
+  }
+  if (!window.canRedirect(url)) return;
+  originalReplace.call(window.location, url);
+};
+
+// Cookie storage (Cloudflare)
+window.cookieStorage = {
+  getItem: (key) => {
+    const name = key + "=";
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const cookieArray = decodedCookie.split(';');
+    for(let cookie of cookieArray) {
+      cookie = cookie.trim();
+      if (cookie.indexOf(name) === 0) return cookie.substring(name.length);
+    }
+    return null;
+  },
+  setItem: (key, value) => {
+    const d = new Date();
+    d.setTime(d.getTime() + (7*24*60*60*1000));
+    const expires = "expires=" + d.toUTCString();
+    document.cookie = key + "=" + value + ";" + expires + ";path=/;SameSite=Lax";
+  },
+  removeItem: (key) => {
+    document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+  }
+};
+
+console.log('[PAZ5] Anti-loop e Cloudflare storage prontos');
+</script>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: window.cookieStorage
+  }
+});
+
+// Verificar se já está logado
+(async () => {
+  let sessaoAtual = null;
+  let tentativas = 0;
+  while (!sessaoAtual && tentativas < 3) {
+    const result = await sb.auth.getSession();
+    sessaoAtual = result.data?.session;
+    if (!sessaoAtual) {
+      console.log(`[PAZ5] Tentativa ${tentativas+1}/3: sem sessão`);
+      tentativas++;
+      if (tentativas < 3) await new Promise(r => setTimeout(r, 500));
+    }
+  }
+  if (sessaoAtual) {
+    console.log('[PAZ5] Sessão encontrada, redirecionando...');
+    const { data: perfil } = await sb.from('profiles').select('role').eq('id', sessaoAtual.user.id).single();
+    if (perfil?.role === 'admin' || perfil?.role === 'supervisor') {
+      if (canRedirect('/admin.html')) window.location.replace('/admin.html');
+    } else {
+      if (canRedirect('/index.html')) window.location.replace('/index.html');
+    }
+  }
+})();
+
+// Verificar hash de reset de senha
+const hash = window.location.hash;
+if (hash.includes('type=recovery') || hash.includes('access_token')) {
+  document.getElementById('form-login').classList.remove('active');
+  document.getElementById('form-nova-senha').classList.add('active');
+  window.mostrarAlerta('✓ Sessão recuperada. Defina uma nova senha abaixo.', 'ok');
+}
+
+// LOGIN
+window.doLogin = async function() {
+  const email = document.getElementById('inp-email').value.trim().toLowerCase();
+  const senha  = document.getElementById('inp-senha').value;
+  const btn    = document.getElementById('btn-login');
+
+  window.esconderAlerta();
+  if (!email || !senha) {
+    window.mostrarAlerta('⚠ Preencha e-mail e senha.', 'erro');
+    return;
+  }
+
+  window.setLoading(btn, true);
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+    if (error) throw error;
+
+    const { data: perfil, error: perfilErr } = await sb.from('profiles')
+      .select('status, role').eq('id', data.user.id).single();
+    if (perfilErr) throw new Error('Erro ao carregar perfil.');
+    if (perfil.status === 'bloqueado') {
+      await sb.auth.signOut();
+      throw new Error('Sua conta foi bloqueada.');
+    }
+    if (perfil.status === 'inativo') {
+      await sb.auth.signOut();
+      throw new Error('Sua conta está inativa.');
+    }
+
+    try { await sb.rpc('update_last_login', { uid: data.user.id }); } catch(_){}
+    try { await sb.from('logs').insert({ acao: 'LOGIN', descricao: `Login: ${email}` }); } catch(_){}
+
+    if (perfil.role === 'admin' || perfil.role === 'supervisor') {
+      if (canRedirect('/admin.html')) window.location.replace('/admin.html');
+    } else {
+      if (canRedirect('/index.html')) window.location.replace('/index.html');
+    }
+  } catch (e) {
+    let msg = e.message || 'Erro ao fazer login.';
+    if (msg.includes('Invalid login credentials')) msg = 'E-mail ou senha incorretos.';
+    if (msg.includes('Email not confirmed')) msg = 'Confirme seu e-mail.';
+    if (msg.includes('Too many requests')) msg = 'Muitas tentativas. Aguarde.';
+    window.mostrarAlerta('⚠ ' + msg, 'erro');
+    window.setLoading(btn, false);
+  }
+};
+
+// NOVA SENHA
+window.doNovaSenha = async function() {
+  const nova  = document.getElementById('inp-nova').value;
+  const nova2 = document.getElementById('inp-nova2').value;
+  const btn   = document.getElementById('btn-nova');
+
+  window.esconderAlerta();
+  if (!nova || nova.length < 8) {
+    window.mostrarAlerta('⚠ Mínimo 8 caracteres.', 'erro');
+    return;
+  }
+  if (nova !== nova2) {
+    window.mostrarAlerta('⚠ Senhas não coincidem.', 'erro');
+    return;
+  }
+
+  window.setLoading(btn, true);
+
+  try {
+    const { error } = await sb.auth.updateUser({ password: nova });
+    if (error) throw error;
+    try { await sb.from('logs').insert({ acao: 'CHANGE_PASSWORD', descricao: 'Senha redefinida' }); } catch(_){}
+    window.mostrarAlerta('✓ Senha alterada! Redirecionando...', 'ok');
+    setTimeout(() => {
+      if (canRedirect('/index.html')) window.location.replace('/index.html');
+    }, 2000);
+  } catch (e) {
+    window.mostrarAlerta('⚠ ' + (e.message || 'Erro.'), 'erro');
+    window.setLoading(btn, false);
+  }
+};
+
+// RECUPERAÇÃO
+window.doRecuperacao = async function() {
+  const email = document.getElementById('inp-rec-email').value.trim().toLowerCase();
+  const btn   = document.getElementById('btn-rec');
+  const alerta = document.getElementById('alerta-rec');
+
+  alerta.classList.remove('show');
+  if (!email) {
+    alerta.textContent = '⚠ Digite seu e-mail.';
+    alerta.className = 'alerta erro show';
+    return;
+  }
+
+  window.setLoading(btn, true);
+
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/login.html'
+    });
+    if (error) throw error;
+    alerta.textContent = '✓ Link enviado para ' + email;
+    alerta.className = 'alerta ok show';
+    window.setLoading(btn, false, 'Enviar Link');
+  } catch (e) {
+    alerta.textContent = '⚠ ' + (e.message || 'Erro.');
+    alerta.className = 'alerta erro show';
+    window.setLoading(btn, false, 'Enviar Link');
+  }
+};
+
+// Enter no email vai para senha
+document.getElementById('inp-email').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('inp-senha').focus();
+});
+
+console.log('[PAZ5] Login module carregado OK');
+</script>
+</body>
+</html>
