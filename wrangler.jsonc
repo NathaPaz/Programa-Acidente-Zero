@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "programapaz",
+  "compatibility_date": "2026-05-29",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "paz5"
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}
