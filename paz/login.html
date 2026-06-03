@@ -269,17 +269,6 @@ function canRedirect(target) {
   return true;
 }
 
-const originalReplace = window.location.replace;
-window.location.replace = function(url) {
-  console.log('[PAZ5] Redirect:', url);
-  if (window.location.pathname === '/login.html' && url.includes('login.html')) {
-    console.warn('[PAZ5] Bloqueado: loop login→login');
-    return;
-  }
-  if (!canRedirect(url)) return;
-  originalReplace.call(window.location, url);
-};
-
 // Cookie storage (Cloudflare fix)
 window.cookieStorage = {
   getItem: (key) => {
@@ -324,17 +313,6 @@ window.canRedirect = function(target) {
   }
   window._lastRedirect = now;
   return true;
-};
-
-const originalReplace = window.location.replace;
-window.location.replace = function(url) {
-  console.log('[PAZ5] Redirect:', url);
-  if (window.location.pathname === '/login.html' && url.includes('login.html')) {
-    console.warn('[PAZ5] Bloqueado: loop login→login');
-    return;
-  }
-  if (!window.canRedirect(url)) return;
-  originalReplace.call(window.location, url);
 };
 
 // Cookie storage (Cloudflare)
