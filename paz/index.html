@@ -1819,14 +1819,6 @@ function canRedirect(target) {
   return true;
 }
 
-// Override window.location.replace para evitar loops
-const originalReplace = window.location.replace;
-window.location.replace = function(url) {
-  console.log('[PAZ5] Redirect para:', url);
-  if (!canRedirect(url)) return;
-  originalReplace.call(window.location, url);
-};
-
 // Cloudflare: usar cookie storage
 const cookieStorage = {
   getItem: (key) => {
