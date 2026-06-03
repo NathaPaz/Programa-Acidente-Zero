@@ -456,7 +456,8 @@ window.doLogin = async function() {
     window.setLoading(btn, false);
   }
 };
-
+console.log('[PAZ5] doLogin criada:', typeof window.doLogin);
+  
 // NOVA SENHA
 window.doNovaSenha = async function() {
   const nova  = document.getElementById('inp-nova').value;
@@ -525,6 +526,7 @@ document.getElementById('inp-email').addEventListener('keydown', e => {
 });
 
 console.log('[PAZ5] Login module carregado OK');
+  console.log('[PAZ5] Módulo finalizado');
 </script>
 </body>
 </html>
