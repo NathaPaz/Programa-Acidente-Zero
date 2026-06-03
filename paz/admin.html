@@ -465,17 +465,6 @@ window.canRedirect = function(target) {
   return true;
 };
 
-const originalReplace = window.location.replace;
-window.location.replace = function(url) {
-  console.log('[PAZ5] Redirect:', url);
-  if (window.location.pathname === '/login.html' && url.includes('login.html')) {
-    console.warn('[PAZ5] Bloqueado: loop login→login');
-    return;
-  }
-  if (!window.canRedirect(url)) return;
-  originalReplace.call(window.location, url);
-};
-
 // Cookie storage (Cloudflare)
 window.cookieStorage = {
   getItem: (key) => {
@@ -535,14 +524,6 @@ function canRedirect(target) {
   window._lastRedirect = now;
   return true;
 }
-
-// Override window.location.replace para evitar loops
-const originalReplace = window.location.replace;
-window.location.replace = function(url) {
-  console.log('[PAZ5] Redirect para:', url);
-  if (!canRedirect(url)) return;
-  originalReplace.call(window.location, url);
-};
 
 // Cloudflare: usar cookie storage
 const cookieStorage = {
