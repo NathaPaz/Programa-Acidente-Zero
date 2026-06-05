@@ -93,6 +93,11 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--tx);min-he
 .rank-bar-w{flex:1;height:5px;background:#EEF2F8;border-radius:3px;overflow:hidden;}
 .rank-bar{height:100%;border-radius:3px;background:var(--av);}
 
+/* Tooltip auditoria */
+.td-hover{position:relative;}
+.td-hover .tt{display:none;position:absolute;right:0;top:100%;z-index:200;background:#1a2f4a;color:#fff;border-radius:8px;padding:9px 12px;font-size:11px;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-width:180px;max-width:300px;box-shadow:0 6px 24px rgba(0,0,0,.25);pointer-events:none;}
+.td-hover:hover .tt{display:block;}
+  
 /* FORMS */
 .flbl{font-size:9px;font-weight:800;color:var(--av);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;display:block;}
 .fi{padding:9px 12px;border-radius:7px;border:1.5px solid #DDE5EF;background:var(--bg);font-family:'Barlow',sans-serif;font-size:12px;outline:none;width:100%;color:var(--tx);transition:all .17s;margin-bottom:12px;}
@@ -711,7 +716,7 @@ window.carregarDetalheAnalista = async function() {
       <td style="font-size:11px">${esc(o.cliente)}</td>
       <td style="font-size:11px;color:var(--ci)">${esc(o.motivo)}</td>
       <td><span class="badge badge-${o.nota||'none'}">${o.nota||'—'}</span></td>
-      <td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.descricao||'—')}</td>
+      <td style="color:var(--txs);font-size:10px;cursor:help">📝 desc.<div class="tt">${esc(o.descricao||'—')}</td>
     </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:24px">Sem registros</td></tr>';
 };
 
