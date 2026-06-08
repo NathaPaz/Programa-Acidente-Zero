@@ -837,21 +837,7 @@ function confirmarLimparPlanilha(){
 // AÇÕES EXCLUIR / RETORNAR
 // ════════════════════════════════════════════════════════
 // excluirMotorista, excluirOriId, retornarOriId, apagarOriId
-// → substituídas pelas versões Supabase no bloco <script>
-// Stub functions - permitem que HTML chame funções antes do módulo carregar
-window.showPage = function(p) { console.log('[PAZ5] showPage aguardando módulo:', p); };
-window.filtrarMot = function() { console.log('[PAZ5] filtrarMot aguardando módulo'); };
-window.updDash = function() { console.log('[PAZ5] updDash aguardando módulo'); };
-window.abrirModal = function(m) { console.log('[PAZ5] abrirModal aguardando módulo'); };
-window.closeModal = function() { console.log('[PAZ5] closeModal aguardando módulo'); };
-window.salvarOri = function() { console.log('[PAZ5] salvarOri aguardando módulo'); };
-window.doLogout = function() { console.log('[PAZ5] doLogout aguardando módulo'); };
-window.procMensal = function() { console.log('[PAZ5] procMensal aguardando módulo'); };
-window.impOrient = function() { console.log('[PAZ5] impOrient aguardando módulo'); };
-window.exportarCSV = function() { console.log('[PAZ5] exportarCSV aguardando módulo'); };
-</script>
-
-<script type="module">
+// → substituídas pelas versões Supabase no bloco <script type="module">
 
 
 // ════════════════════════════════════════════════════════
@@ -930,7 +916,6 @@ function procFile(file,tipo){
 
 async function procMensal(data,fname){
   // Sincronizar arrays globais com window (definidos pelo módulo Supabase)
-  
   if(window.mots)mots=window.mots;
   if(window.oris)oris=window.oris;
   if(window.tents)tents=window.tents;
@@ -1442,7 +1427,7 @@ function renderTabelaTodos(lista){
       <td style="white-space:nowrap">${fmtData(o.data)}</td>
       <td>${fmtHora(o.hora)}</td>
       <td><span class="badge ${cor}">${o.nota||'—'}</span></td>
-      <td><div class="td-hover" style="color:var(--txs);font-size:10px;cursor:help">📝 desc.<div class="tt">${esc(o.descricao||'—')}</div></td>
+      <td><div class="desc-cell">${esc(o.descricao||'—')}</div></td>
       <td>
         <div class="act-btns">
           <button class="btn-ico ret" title="Devolver para orientar" onclick="confirmar('↩','Devolver para orientar?','A orientação de ${nomeEsc} será removida e ele voltará para a lista.',()=>window.retornarOriId('${m.id}','${tsKey}'),'Devolver','linear-gradient(135deg,var(--av),var(--am))')">↩</button>
@@ -1716,77 +1701,19 @@ function _initApp(){
 // SUPABASE AUTH + PROTEÇÃO DE ROTA
 // ════════════════════════════════════════════════════════
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-// ════════════════════════════════════════════════════════
-// CLOUDFLARE - Anti-loop + Persistência de sessão
-// ════════════════════════════════════════════════════════
-
-window._redirects = window._redirects || [];
-window._lastRedirect = 0;
-
-function canRedirect(target) {
-  const now = Date.now();
-  const lastTime = window._lastRedirect || 0;
-  if (now - lastTime < 3000) {
-    console.warn('[PAZ5] Redirecionamento em loop bloqueado');
-    return false;
-  }
-  window._lastRedirect = now;
-  return true;
-}
-
-// Override window.location.replace para evitar loops
-function redirectWithLog(url) {
-  console.log('[PAZ5] Redirect para:', url);
-
-  if (!canRedirect(url)) {
-    return;
-  }
-    
-  window.location.replace(url);
-}
-
-// Cloudflare: usar cookie storage
-const cookieStorage = {
-  getItem: (key) => {
-    const name = key + "=";
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const cookieArray = decodedCookie.split(';');
-    for(let cookie of cookieArray) {
-      cookie = cookie.trim();
-      if (cookie.indexOf(name) === 0) return cookie.substring(name.length);
-    }
-    return null;
-  },
-  setItem: (key, value) => {
-    const d = new Date();
-    d.setTime(d.getTime() + (7*24*60*60*1000));
-    const expires = "expires=" + d.toUTCString();
-    document.cookie = key + "=" + value + ";" + expires + ";path=/;SameSite=Lax";
-  },
-  removeItem: (key) => {
-    document.cookie = key + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
-  }
-};
-
-console.log('[PAZ5] Cloudflare mode: cookie storage ativado');
-
 
 // ⚠️ Substitua pelos valores reais do seu projeto Supabase
 const SUPABASE_URL  = 'https://ztvsszhlniirmqdavgzu.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dnNzemhsbmlpcm1xZGF2Z3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTU5MDcsImV4cCI6MjA5NDk5MTkwN30.RcR3Zv4E5_pJnzjGr-2Rspfe64QrwH1WobLhwdewnlU';
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    storage: cookieStorage
-  }
+  auth: { persistSession: true, autoRefreshToken: true }
 });
 
 // Proteção de rota — redireciona se não autenticado
 const { data: { session } } = await sb.auth.getSession();
 if (!session) {
-  redirectWithLog('/login.html');
+  window.location.replace('/login.html');
   throw new Error('Não autenticado');
 }
 
@@ -1798,7 +1725,7 @@ const { data: perfil } = await sb
 
 if (!perfil || perfil.status !== 'ativo') {
   await sb.auth.signOut();
-  redirectWithLog('/login.html');
+  window.location.replace('/login.html');
   throw new Error('Conta inativa ou bloqueada');
 }
 
@@ -2150,7 +2077,7 @@ window.doLogout = async function() {
   if (!confirm('Deseja encerrar a sessão?')) return;
   try { await sb.from('logs').insert({acao:'LOGOUT',descricao:'Analista encerrou sessão'}); } catch(_){}
   await sb.auth.signOut();
-  redirectWithLog('/login.html');
+  window.location.replace('/login.html');
 };
 
 // Troca de senha
