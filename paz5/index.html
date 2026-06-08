@@ -1427,7 +1427,7 @@ function renderTabelaTodos(lista){
       <td style="white-space:nowrap">${fmtData(o.data)}</td>
       <td>${fmtHora(o.hora)}</td>
       <td><span class="badge ${cor}">${o.nota||'—'}</span></td>
-      <td><div class="td-hover" style="color:var(--txs);font-size:40px;cursor:help">📝 desc.<div class="tt">${esc(o.descricao||'—')}</div></td>
+      <td><div class="td-hover" style="color:var(--txs);font-size:10px;cursor:help">📝 desc.<div class="tt">${esc(o.descricao||'—')}</div></td>
       <td>
         <div class="act-btns">
           <button class="btn-ico ret" title="Devolver para orientar" onclick="confirmar('↩','Devolver para orientar?','A orientação de ${nomeEsc} será removida e ele voltará para a lista.',()=>window.retornarOriId('${m.id}','${tsKey}'),'Devolver','linear-gradient(135deg,var(--av),var(--am))')">↩</button>
